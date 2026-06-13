@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { MainLayout } from "../components/layout/MainLayout";
 import { AuthGuard } from "../features/auth/AuthGuard";
 import { LoginPage } from "../features/auth/LoginPage";
+import { CustomersPage } from "../features/customers/CustomersPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { InventoryPage } from "../features/inventory/InventoryPage";
 import { InvoicesPage } from "../features/invoices/InvoicesPage";
@@ -26,6 +27,7 @@ export function AppRouter() {
             <Route path="invoices" element={<InvoicesPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="staff" element={<StaffPage />} />
+            <Route path="customers" element={<CustomersPage />} />
           </Route>
         </Route>
       </Routes>

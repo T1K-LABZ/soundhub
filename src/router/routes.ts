@@ -8,6 +8,7 @@ export const ROUTES = {
   reports: "/reports",
   invoices: "/invoices",
   staff: "/staff",
+  customers: "/customers",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
