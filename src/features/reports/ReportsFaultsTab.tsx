@@ -3,11 +3,7 @@ import {
   Card,
   CardContent,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Grid,
   Typography,
 } from "@mui/material";
 import {
@@ -26,12 +22,55 @@ import { formatKsh } from "./reports.utils";
 
 type Props = { faults: FaultRecord[] };
 
+function FaultCard({ fault }: { fault: FaultRecord }) {
+  return (
+    <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            {fault.date}
+          </Typography>
+          <Chip
+            label={fault.actionTaken}
+            size="small"
+            sx={{
+              fontSize: 10,
+              height: 18,
+              bgcolor: ACTION_COLOR[fault.actionTaken] + "22",
+              color: ACTION_COLOR[fault.actionTaken],
+              fontWeight: 600,
+            }}
+          />
+        </Box>
+
+        <Typography variant="subtitle2" fontWeight={700} mb={0.5} noWrap>
+          {fault.productName}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+          {fault.brand} · Qty: {fault.quantity}
+        </Typography>
+
+        <Typography variant="caption" color="text.secondary" display="block" mb={1.5} noWrap>
+          {fault.faultDescription}
+        </Typography>
+
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="caption" color="text.secondary">
+            {fault.loggedBy}
+          </Typography>
+          <Typography variant="caption" fontWeight={700} color="#DC2626">
+            {formatKsh(fault.valueLost)}
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ReportsFaultsTab({ faults }: Props) {
-  // KPI calculations
   const writtenOff = faults.filter((f) => f.actionTaken === "Written Off");
   const totalValueLost = faults.reduce((s, f) => s + f.valueLost, 0);
 
-  // Most faulty brand
   const brandCount: Record<string, number> = {};
   for (const f of faults) {
     brandCount[f.brand] = (brandCount[f.brand] ?? 0) + 1;
@@ -39,7 +78,6 @@ export function ReportsFaultsTab({ faults }: Props) {
   const mostFaultyBrand =
     Object.entries(brandCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
-  // Fault rate by brand (horizontal bar)
   const brandFaultData = Object.entries(brandCount)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
@@ -124,94 +162,21 @@ export function ReportsFaultsTab({ faults }: Props) {
         </Card>
       </Box>
 
-      {/* Fault log table + bar chart row */}
+      {/* Fault cards + bar chart */}
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-        {/* Fault log table */}
-        <Card
-          sx={{
-            flex: "1 1 60%",
-            minWidth: 300,
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "divider",
-          }}
-        >
-          <CardContent sx={{ p: 0 }}>
-            <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-              <Typography variant="subtitle2" fontWeight={600}>
-                Fault Log
-              </Typography>
-            </Box>
-            <Box sx={{ overflowX: "auto" }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "action.hover" }}>
-                    {[
-                      "Date",
-                      "Product",
-                      "Brand",
-                      "Qty",
-                      "Fault",
-                      "Action",
-                      "Value Lost",
-                      "Logged By",
-                    ].map((h) => (
-                      <TableCell
-                        key={h}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: 11,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {faults.map((f) => (
-                    <TableRow key={f.id} hover>
-                      <TableCell sx={{ fontSize: 11 }}>{f.date}</TableCell>
-                      <TableCell sx={{ fontSize: 11, maxWidth: 160 }}>
-                        {f.productName}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 11 }}>{f.brand}</TableCell>
-                      <TableCell sx={{ fontSize: 11, fontWeight: 600 }}>
-                        {f.quantity}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 11, maxWidth: 180 }}>
-                        {f.faultDescription}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={f.actionTaken}
-                          size="small"
-                          sx={{
-                            fontSize: 10,
-                            height: 18,
-                            bgcolor: ACTION_COLOR[f.actionTaken] + "22",
-                            color: ACTION_COLOR[f.actionTaken],
-                            fontWeight: 600,
-                            whiteSpace: "nowrap",
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell
-                        sx={{ fontSize: 11, color: "#DC2626", fontWeight: 600 }}
-                      >
-                        {formatKsh(f.valueLost)}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 11 }}>{f.loggedBy}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          </CardContent>
-        </Card>
+        <Box sx={{ flex: "1 1 60%", minWidth: 300 }}>
+          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+            Fault Log
+          </Typography>
+          <Grid container spacing={2}>
+            {faults.map((f) => (
+              <Grid key={f.id} size={{ xs: 12, sm: 6 }}>
+                <FaultCard fault={f} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
 
-        {/* Fault rate by brand bar chart */}
         <Card
           sx={{
             flex: "1 1 32%",
@@ -219,6 +184,7 @@ export function ReportsFaultsTab({ faults }: Props) {
             borderRadius: 2,
             border: "1px solid",
             borderColor: "divider",
+            alignSelf: "flex-start",
           }}
         >
           <CardContent>

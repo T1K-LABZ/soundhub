@@ -2,16 +2,12 @@ import { CakeOutlined, SendOutlined } from "@mui/icons-material";
 import {
   Box,
   Button,
+  Card,
+  CardContent,
   Chip,
   Collapse,
-  Divider,
   IconButton,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
@@ -49,8 +45,7 @@ export function BirthdayPanel({ customers, onSendOffer }: Props) {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <CakeOutlined sx={{ color: "#f59e0b" }} fontSize="small" />
           <Typography variant="subtitle2" fontWeight={700}>
-            🎂 Birthdays This Month — {birthdays.length} customer
-            {birthdays.length !== 1 ? "s" : ""}
+            🎂 Birthdays This Month — {birthdays.length}
           </Typography>
         </Box>
         <IconButton size="small">
@@ -59,61 +54,41 @@ export function BirthdayPanel({ customers, onSendOffer }: Props) {
       </Box>
 
       <Collapse in={open}>
-        <Divider />
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ bgcolor: "background.default" }}>
-              <TableCell>Name</TableCell>
-              <TableCell>Phone</TableCell>
-              <TableCell>Birthday</TableCell>
-              <TableCell>Tier</TableCell>
-              <TableCell align="center">Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {birthdays.map((c) => {
-              const tier = deriveCustomerTier(c);
-              const tc = TIER_COLOR[tier];
-              const bday = c.birthday
-                ? new Date(c.birthday).toLocaleDateString("en-KE", {
-                    day: "numeric",
-                    month: "long",
-                  })
-                : "—";
-              return (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={500}>
-                      {c.fullName}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="caption">{c.phone}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">🎂 {bday}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={tier}
-                      size="small"
-                      sx={{ bgcolor: `${tc}18`, color: tc, fontWeight: 600 }}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
+        <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          {birthdays.map((c) => {
+            const tier = deriveCustomerTier(c);
+            const tc = TIER_COLOR[tier];
+            const bday = c.birthday
+              ? new Date(c.birthday).toLocaleDateString("en-KE", {
+                  day: "numeric",
+                  month: "long",
+                })
+              : "—";
+            return (
+              <Card key={c.id} variant="outlined">
+                <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>
+                        {c.fullName} 🎂
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {bday} • {c.phone}
+                      </Typography>
+                    </Box>
                     <Button
                       size="small"
                       startIcon={<SendOutlined />}
                       onClick={() => onSendOffer(c)}
                     >
-                      Send Birthday Offer
+                      Send Offer
                     </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                  </Box>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Box>
       </Collapse>
     </Paper>
   );

@@ -3,11 +3,7 @@ import {
   Card,
   CardContent,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Grid,
   Typography,
 } from "@mui/material";
 import {
@@ -46,7 +42,6 @@ function TechnicianCard({
       }}
     >
       <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-        {/* Avatar circle */}
         <Box
           sx={{
             width: 40,
@@ -71,33 +66,19 @@ function TechnicianCard({
 
         <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="caption" color="text.secondary">
-              Jobs done
-            </Typography>
-            <Typography variant="caption" fontWeight={600}>
-              {stat.jobsCompleted}
-            </Typography>
+            <Typography variant="caption" color="text.secondary">Jobs done</Typography>
+            <Typography variant="caption" fontWeight={600}>{stat.jobsCompleted}</Typography>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="caption" color="text.secondary">
-              Revenue
-            </Typography>
-            <Typography variant="caption" fontWeight={600}>
-              {formatKsh(stat.revenue)}
-            </Typography>
+            <Typography variant="caption" color="text.secondary">Revenue</Typography>
+            <Typography variant="caption" fontWeight={600}>{formatKsh(stat.revenue)}</Typography>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="caption" color="text.secondary">
-              Avg value
-            </Typography>
-            <Typography variant="caption" fontWeight={600}>
-              {formatKsh(stat.avgJobValue)}
-            </Typography>
+            <Typography variant="caption" color="text.secondary">Avg value</Typography>
+            <Typography variant="caption" fontWeight={600}>{formatKsh(stat.avgJobValue)}</Typography>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography variant="caption" color="text.secondary">
-              Follow-ups
-            </Typography>
+            <Typography variant="caption" color="text.secondary">Follow-ups</Typography>
             <Typography
               variant="caption"
               fontWeight={600}
@@ -125,11 +106,9 @@ function TechnicianCard({
 }
 
 export function ReportsTechniciansTab({ techStats }: Props) {
-  // Data for grouped bar chart
   const barData = techStats.map((t) => ({
     name: t.name,
     "Jobs Completed": t.jobsCompleted,
-    // Normalise revenue to thousands for readability on shared axis
     "Revenue (K)": Math.round(t.revenue / 1000),
   }));
 
@@ -177,99 +156,72 @@ export function ReportsTechniciansTab({ techStats }: Props) {
         </CardContent>
       </Card>
 
-      {/* Technician detail table */}
-      <Card
-        sx={{ borderRadius: 2, border: "1px solid", borderColor: "divider" }}
-      >
-        <CardContent sx={{ p: 0 }}>
-          <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-            <Typography variant="subtitle2" fontWeight={600}>
-              Technician Summary
-            </Typography>
-          </Box>
-          <Box sx={{ overflowX: "auto" }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: "action.hover" }}>
-                  {[
-                    "Technician",
-                    "Jobs Done",
-                    "Total Revenue",
-                    "Avg Job Value",
-                    "Follow-up Rate",
-                    "Top Service",
-                  ].map((h) => (
-                    <TableCell
-                      key={h}
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: 12,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {techStats.map((t, i) => (
-                  <TableRow key={t.name} hover>
-                    <TableCell>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        <Box
-                          sx={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: "50%",
-                            bgcolor: TECH_COLORS[i % TECH_COLORS.length] + "33",
-                            color: TECH_COLORS[i % TECH_COLORS.length],
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: 700,
-                            fontSize: 12,
-                          }}
-                        >
-                          {t.name.charAt(0)}
-                        </Box>
-                        <Typography variant="body2" fontWeight={600}>
-                          {t.name}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12, fontWeight: 600 }}>
-                      {t.jobsCompleted}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>
-                      {formatKsh(t.revenue)}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>
-                      {formatKsh(t.avgJobValue)}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={`${t.followUpRate}%`}
-                        size="small"
-                        sx={{
-                          fontSize: 11,
-                          height: 20,
-                          bgcolor: t.followUpRate > 30 ? "#fef3c7" : "#dcfce7",
-                          color: t.followUpRate > 30 ? "#D97706" : "#16A34A",
-                          fontWeight: 600,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{t.topService}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
-        </CardContent>
-      </Card>
+      {/* Technician summary cards */}
+      <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+        Technician Summary
+      </Typography>
+      <Grid container spacing={2}>
+        {techStats.map((t, i) => (
+          <Grid key={t.name} size={{ xs: 12, sm: 6, md: 4 }}>
+            <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+              <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      bgcolor: TECH_COLORS[i % TECH_COLORS.length] + "33",
+                      color: TECH_COLORS[i % TECH_COLORS.length],
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}
+                  >
+                    {t.name.charAt(0)}
+                  </Box>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    {t.name}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">Jobs Done</Typography>
+                  <Typography variant="caption" fontWeight={700}>{t.jobsCompleted}</Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">Revenue</Typography>
+                  <Typography variant="caption" fontWeight={700}>{formatKsh(t.revenue)}</Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">Avg Job Value</Typography>
+                  <Typography variant="caption">{formatKsh(t.avgJobValue)}</Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">Follow-up Rate</Typography>
+                  <Chip
+                    label={`${t.followUpRate}%`}
+                    size="small"
+                    sx={{
+                      fontSize: 10,
+                      height: 18,
+                      bgcolor: t.followUpRate > 30 ? "#fef3c7" : "#dcfce7",
+                      color: t.followUpRate > 30 ? "#D97706" : "#16A34A",
+                      fontWeight: 600,
+                    }}
+                  />
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="caption" color="text.secondary">Top Service</Typography>
+                  <Typography variant="caption" fontWeight={600}>{t.topService}</Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
     </Box>
   );
 }

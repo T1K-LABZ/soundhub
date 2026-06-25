@@ -2,12 +2,7 @@ import {
   Box,
   Card,
   CardContent,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Grid,
   Typography,
 } from "@mui/material";
 import {
@@ -63,7 +58,6 @@ export function ReportsInventoryTab({ products, movements }: Props) {
     <Box>
       {/* Stat cards + chart row */}
       <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
-        {/* Stock value card */}
         <Card
           sx={{
             flex: "0 0 200px",
@@ -85,7 +79,6 @@ export function ReportsInventoryTab({ products, movements }: Props) {
           </CardContent>
         </Card>
 
-        {/* Movement card */}
         <Card
           sx={{
             flex: "0 0 200px",
@@ -107,7 +100,6 @@ export function ReportsInventoryTab({ products, movements }: Props) {
           </CardContent>
         </Card>
 
-        {/* Line chart */}
         <Card
           sx={{
             flex: "1 1 340px",
@@ -158,203 +150,153 @@ export function ReportsInventoryTab({ products, movements }: Props) {
         </Card>
       </Box>
 
-      {/* 3 tables row */}
-      <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+      {/* Stock alerts - card grid */}
+      <Grid container spacing={2}>
         {/* Low Stock */}
-        <Card
-          sx={{
-            flex: "1 1 30%",
-            minWidth: 220,
-            borderRadius: 2,
-            border: "1.5px solid #D97706",
-          }}
-        >
-          <CardContent>
-            <Typography
-              variant="subtitle2"
-              fontWeight={600}
-              color="#D97706"
-              sx={{ mb: 1 }}
-            >
-              ⚠️ Low Stock ({lowStock.length})
-            </Typography>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{ fontWeight: 600, fontSize: 11, p: "4px 8px" }}
-                  >
-                    Product
-                  </TableCell>
-                  <TableCell
-                    sx={{ fontWeight: 600, fontSize: 11, p: "4px 8px" }}
-                  >
-                    Qty
-                  </TableCell>
-                  <TableCell
-                    sx={{ fontWeight: 600, fontSize: 11, p: "4px 8px" }}
-                  >
-                    ROP
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {lowStock.map((p) => (
-                  <TableRow key={p.productId} hover>
-                    <TableCell sx={{ fontSize: 11, p: "4px 8px" }}>
-                      {p.productName}
-                    </TableCell>
-                    <TableCell
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              height: "100%",
+              borderRadius: 2,
+              border: "1.5px solid #D97706",
+            }}
+          >
+            <CardContent>
+              <Typography
+                variant="subtitle2"
+                fontWeight={600}
+                color="#D97706"
+                sx={{ mb: 1.5 }}
+              >
+                Low Stock ({lowStock.length})
+              </Typography>
+              {lowStock.length === 0 ? (
+                <Typography variant="caption" color="text.disabled">
+                  None
+                </Typography>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {lowStock.map((p) => (
+                    <Box
+                      key={p.productId}
                       sx={{
-                        fontSize: 11,
-                        p: "4px 8px",
-                        color: "#D97706",
-                        fontWeight: 700,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        p: 1,
+                        bgcolor: "#fffbeb",
+                        borderRadius: 1,
                       }}
                     >
-                      {p.quantityOnHand}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 11, p: "4px 8px" }}>
-                      {p.reorderPoint}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {lowStock.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={3}
-                      sx={{
-                        fontSize: 11,
-                        textAlign: "center",
-                        color: "text.disabled",
-                      }}
-                    >
-                      None
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      <Typography variant="caption" noWrap sx={{ flex: 1, mr: 1 }}>
+                        {p.productName}
+                      </Typography>
+                      <Box sx={{ display: "flex", gap: 1.5, flexShrink: 0 }}>
+                        <Typography variant="caption" color="#D97706" fontWeight={700}>
+                          {p.quantityOnHand} in stock
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          ROP: {p.reorderPoint}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
 
         {/* Out of Stock */}
-        <Card
-          sx={{
-            flex: "1 1 30%",
-            minWidth: 220,
-            borderRadius: 2,
-            border: "1.5px solid #DC2626",
-          }}
-        >
-          <CardContent>
-            <Typography
-              variant="subtitle2"
-              fontWeight={600}
-              color="#DC2626"
-              sx={{ mb: 1 }}
-            >
-              🚫 Out of Stock ({outOfStock.length})
-            </Typography>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{ fontWeight: 600, fontSize: 11, p: "4px 8px" }}
-                  >
-                    Product
-                  </TableCell>
-                  <TableCell
-                    sx={{ fontWeight: 600, fontSize: 11, p: "4px 8px" }}
-                  >
-                    ROP
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {outOfStock.map((p) => (
-                  <TableRow key={p.productId} hover>
-                    <TableCell sx={{ fontSize: 11, p: "4px 8px" }}>
-                      {p.productName}
-                    </TableCell>
-                    <TableCell
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              height: "100%",
+              borderRadius: 2,
+              border: "1.5px solid #DC2626",
+            }}
+          >
+            <CardContent>
+              <Typography
+                variant="subtitle2"
+                fontWeight={600}
+                color="#DC2626"
+                sx={{ mb: 1.5 }}
+              >
+                Out of Stock ({outOfStock.length})
+              </Typography>
+              {outOfStock.length === 0 ? (
+                <Typography variant="caption" color="text.disabled">
+                  None
+                </Typography>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {outOfStock.map((p) => (
+                    <Box
+                      key={p.productId}
                       sx={{
-                        fontSize: 11,
-                        p: "4px 8px",
-                        color: "#DC2626",
-                        fontWeight: 700,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        p: 1,
+                        bgcolor: "#fef2f2",
+                        borderRadius: 1,
                       }}
                     >
-                      {p.reorderPoint}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {outOfStock.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      sx={{
-                        fontSize: 11,
-                        textAlign: "center",
-                        color: "text.disabled",
-                      }}
-                    >
-                      None
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      <Typography variant="caption" noWrap sx={{ flex: 1, mr: 1 }}>
+                        {p.productName}
+                      </Typography>
+                      <Typography variant="caption" color="#DC2626" fontWeight={700}>
+                        ROP: {p.reorderPoint}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
 
         {/* Most Stocked */}
-        <Card
-          sx={{
-            flex: "1 1 30%",
-            minWidth: 220,
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "divider",
-          }}
-        >
-          <CardContent>
-            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-              📦 Most Stocked
-            </Typography>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{ fontWeight: 600, fontSize: 11, p: "4px 8px" }}
-                  >
-                    Product
-                  </TableCell>
-                  <TableCell
-                    sx={{ fontWeight: 600, fontSize: 11, p: "4px 8px" }}
-                  >
-                    Qty
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              height: "100%",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <CardContent>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+                Most Stocked
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {mostStocked.map((p) => (
-                  <TableRow key={p.productId} hover>
-                    <TableCell sx={{ fontSize: 11, p: "4px 8px" }}>
+                  <Box
+                    key={p.productId}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      p: 1,
+                      bgcolor: "action.hover",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="caption" noWrap sx={{ flex: 1, mr: 1 }}>
                       {p.productName}
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontSize: 11, p: "4px 8px", fontWeight: 700 }}
-                    >
-                      {p.quantityOnHand}
-                    </TableCell>
-                  </TableRow>
+                    </Typography>
+                    <Typography variant="caption" fontWeight={700}>
+                      {p.quantityOnHand} units
+                    </Typography>
+                  </Box>
                 ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

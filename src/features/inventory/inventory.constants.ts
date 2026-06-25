@@ -9,6 +9,7 @@ export const MOVEMENT_TYPE_COLOR: Record<
   Reserved: "warning",
   Damaged: "error",
   Return: "info",
+  Incoming: "warning",
 };
 
 // NOTE: Damaged uses orange — we override via sx since MUI has no 'orange' semantic colour
@@ -18,6 +19,7 @@ export const MOVEMENT_TYPE_HEX: Record<MovementType, string> = {
   Reserved: "#D97706",
   Damaged: "#EA580C",
   Return: "#2563EB",
+  Incoming: "#F59E0B",
 };
 
 export const CATEGORIES = [
@@ -47,6 +49,7 @@ export const MOVEMENT_TYPES: string[] = [
   "Reserved",
   "Damaged",
   "Return",
+  "Incoming",
 ];
 
 export const STAFF_MEMBERS = [

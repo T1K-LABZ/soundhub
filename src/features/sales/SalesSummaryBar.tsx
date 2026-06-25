@@ -9,14 +9,11 @@ import {
   Box,
   Card,
   CardContent,
-  Grid,
   Tooltip,
   Typography,
 } from "@mui/material";
 import type { SalesSummary } from "./sales.types";
 import { formatKsh } from "./sales.utils";
-
-// ── SummaryCard ───────────────────────────────────────────────────────────────
 
 type SummaryCardProps = {
   label: string;
@@ -28,25 +25,28 @@ type SummaryCardProps = {
 
 function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
   return (
-    <Card variant="outlined" sx={{ height: "100%" }}>
+    <Card
+      variant="outlined"
+      sx={{ height: "100%", minWidth: 0, flex: "1 1 0", display: "flex" }}
+    >
       <CardContent
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 2,
-          p: 2,
+          gap: 1.5,
+          p: 1.5,
           height: "100%",
           boxSizing: "border-box",
-          "&:last-child": { pb: 2 },
+          "&:last-child": { pb: 1.5 },
+          width: "100%",
         }}
       >
-        {/* Coloured icon badge */}
         <Box
           sx={{
             bgcolor: `${color}18`,
             color,
-            borderRadius: 2,
-            p: 1,
+            borderRadius: 1.5,
+            p: 0.75,
             display: "flex",
             flexShrink: 0,
           }}
@@ -54,29 +54,21 @@ function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
           {icon}
         </Box>
 
-        {/* Text block */}
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" display="block">
+        <Box sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+          <Typography variant="caption" color="text.secondary" display="block" noWrap>
             {label}
           </Typography>
-          <Tooltip title={value} disableHoverListener={value.length < 20}>
-            <Typography
-              variant="h6"
-              fontWeight={700}
-              noWrap
-              sx={{ lineHeight: 1.3 }}
-            >
+          <Tooltip title={value} disableHoverListener={value.length < 18}>
+            <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ lineHeight: 1.3 }}>
               {value}
             </Typography>
           </Tooltip>
           {sub && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              display="block"
-            >
-              {sub}
-            </Typography>
+            <Tooltip title={sub} disableHoverListener={sub.length < 25}>
+              <Typography variant="caption" color="text.secondary" display="block" noWrap>
+                {sub}
+              </Typography>
+            </Tooltip>
           )}
         </Box>
       </CardContent>
@@ -84,67 +76,61 @@ function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
   );
 }
 
-// ── SalesSummaryBar ───────────────────────────────────────────────────────────
-
 type Props = {
   summary: SalesSummary;
 };
 
 export function SalesSummaryBar({ summary }: Props) {
   return (
-    <Grid container spacing={2} sx={{ mb: 3 }} alignItems="stretch">
-      {/* Total sales this month */}
-      <Grid size={{ xs: 12, sm: 6, lg: "auto" }} sx={{ flex: 1 }}>
+    <Box
+      sx={{
+        display: "flex",
+        gap: 1.5,
+        mb: 3,
+        overflowX: "auto",
+        pb: 0.5,
+        "&::-webkit-scrollbar": { height: 4 },
+        "&::-webkit-scrollbar-thumb": {
+          bgcolor: "grey.400",
+          borderRadius: 2,
+        },
+      }}
+    >
+      <Box sx={{ display: "flex", gap: 1.5, minWidth: "min-content" }}>
         <SummaryCard
-          label="Total Sales This Month"
+          label="Sales This Month"
           value={formatKsh(summary.totalSalesMonth)}
-          icon={<AttachMoneyOutlined />}
+          icon={<AttachMoneyOutlined fontSize="small" />}
           color="#9333EA"
         />
-      </Grid>
-
-      {/* Paid jobs */}
-      <Grid size={{ xs: 12, sm: 6, lg: "auto" }} sx={{ flex: 1 }}>
         <SummaryCard
           label="Paid Jobs"
           value={summary.paidCount.toString()}
           sub={formatKsh(summary.paidValue)}
-          icon={<CheckCircleOutlined />}
+          icon={<CheckCircleOutlined fontSize="small" />}
           color="#16A34A"
         />
-      </Grid>
-
-      {/* Unpaid jobs */}
-      <Grid size={{ xs: 12, sm: 6, lg: "auto" }} sx={{ flex: 1 }}>
         <SummaryCard
           label="Unpaid Jobs"
           value={summary.unpaidCount.toString()}
           sub={formatKsh(summary.unpaidValue)}
-          icon={<MoneyOffOutlined />}
+          icon={<MoneyOffOutlined fontSize="small" />}
           color="#DC2626"
         />
-      </Grid>
-
-      {/* Deposits pending */}
-      <Grid size={{ xs: 12, sm: 6, lg: "auto" }} sx={{ flex: 1 }}>
         <SummaryCard
           label="Deposits Pending"
           value={summary.depositCount.toString()}
-          sub={`Balance: ${formatKsh(summary.depositBalance)}`}
-          icon={<HourglassEmptyOutlined />}
+          sub={`Bal: ${formatKsh(summary.depositBalance)}`}
+          icon={<HourglassEmptyOutlined fontSize="small" />}
           color="#D97706"
         />
-      </Grid>
-
-      {/* Completed today */}
-      <Grid size={{ xs: 12, sm: 6, lg: "auto" }} sx={{ flex: 1 }}>
         <SummaryCard
           label="Completed Today"
           value={summary.completedToday.toString()}
-          icon={<TodayOutlined />}
+          icon={<TodayOutlined fontSize="small" />}
           color="#2563EB"
         />
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
 }

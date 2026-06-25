@@ -7,16 +7,12 @@ import {
 import {
   Box,
   Button,
+  Card,
+  CardContent,
   Chip,
   Collapse,
-  Divider,
   IconButton,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
@@ -38,7 +34,6 @@ export function InactiveCustomersPanel({
 }: Props) {
   const [open, setOpen] = useState(true);
 
-  // Inactive = no visit in 180+ days
   const inactive = customers
     .filter((c) => daysSinceVisit(c.lastVisit) >= 180)
     .sort((a, b) => daysSinceVisit(b.lastVisit) - daysSinceVisit(a.lastVisit));
@@ -55,13 +50,15 @@ export function InactiveCustomersPanel({
           px: 2,
           py: 1.5,
           cursor: "pointer",
+          flexWrap: "wrap",
+          gap: 1,
         }}
         onClick={() => setOpen((v) => !v)}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <WarningAmberOutlined sx={{ color: "#DC2626" }} fontSize="small" />
           <Typography variant="subtitle2" fontWeight={700} color="error">
-            Inactive Customers — {inactive.length} haven't visited in 6+ months
+            Inactive — {inactive.length}
           </Typography>
         </Box>
         <Box
@@ -75,7 +72,7 @@ export function InactiveCustomersPanel({
             startIcon={<SendOutlined />}
             onClick={onBulkWinback}
           >
-            Send Win-back Campaign
+            Win-back
           </Button>
           <IconButton size="small">
             {open ? <ExpandLessOutlined /> : <ExpandMoreOutlined />}
@@ -84,67 +81,34 @@ export function InactiveCustomersPanel({
       </Box>
 
       <Collapse in={open}>
-        <Divider />
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ bgcolor: "background.default" }}>
-              <TableCell>Name</TableCell>
-              <TableCell>Phone</TableCell>
-              <TableCell>Cars</TableCell>
-              <TableCell>Tier</TableCell>
-              <TableCell>Last Visit</TableCell>
-              <TableCell align="right">Days Inactive</TableCell>
-              <TableCell align="right">Total Spent</TableCell>
-              <TableCell align="center">Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {inactive.map((c) => {
-              const tier = deriveCustomerTier(c);
-              const tc = TIER_COLOR[tier];
-              const days = daysSinceVisit(c.lastVisit);
-              return (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={500}>
-                      {c.fullName}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="caption">{c.phone}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="caption">
-                      {c.vehicles.map((v) => v.plate).join(", ")}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
+        <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          {inactive.map((c) => {
+            const tier = deriveCustomerTier(c);
+            const tc = TIER_COLOR[tier];
+            const days = daysSinceVisit(c.lastVisit);
+            return (
+              <Card key={c.id} variant="outlined">
+                <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>
+                        {c.fullName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {c.phone} • {c.vehicles.map((v) => v.plate).join(", ")}
+                      </Typography>
+                    </Box>
                     <Chip
-                      label={tier}
+                      label={`${days}d inactive`}
                       size="small"
-                      sx={{ bgcolor: `${tc}18`, color: tc, fontWeight: 600 }}
+                      color="error"
+                      sx={{ fontWeight: 600, fontSize: "0.7rem", height: 22 }}
                     />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="caption">
-                      {formatDate(c.lastVisit)}
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Last visit: {formatDate(c.lastVisit)} • Spent: {formatKsh(c.totalSpent)}
                     </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography
-                      variant="body2"
-                      fontWeight={700}
-                      color="error.main"
-                    >
-                      {days}d
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography variant="body2">
-                      {formatKsh(c.totalSpent)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">
                     <Button
                       size="small"
                       startIcon={<SendOutlined />}
@@ -152,12 +116,12 @@ export function InactiveCustomersPanel({
                     >
                       Win-back
                     </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                  </Box>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Box>
       </Collapse>
     </Paper>
   );

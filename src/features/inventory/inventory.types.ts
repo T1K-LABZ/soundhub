@@ -3,7 +3,8 @@ export type MovementType =
   | "Stock Out"
   | "Reserved"
   | "Damaged"
-  | "Return";
+  | "Return"
+  | "Incoming";
 
 export type StockMovement = {
   id: string;
@@ -20,6 +21,8 @@ export type StockMovement = {
   supplier?: string;
   customerRef?: string;
   condition?: string;
+  expectedDate?: string; // For Incoming type
+  trackingRef?: string; // For Incoming type
 };
 
 export type InventoryProduct = {
@@ -96,6 +99,23 @@ export type ProcessReturnForm = {
   condition: "Resellable" | "Damaged" | "Faulty";
   date: string;
   processedBy: string;
+};
+
+export type CreateIncomingForm = {
+  supplier: string;
+  expectedDate: string;
+  trackingRef: string;
+  notes: string;
+  createdBy: string;
+  items: CreateIncomingBatchItem[];
+};
+
+export type CreateIncomingBatchItem = {
+  id: string;
+  productId: string;
+  quantity: number;
+  buyingPrice: number;
+  sellingPrice: number;
 };
 
 // ── Chart types ──────────────────────────────────────────────────────────────

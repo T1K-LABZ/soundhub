@@ -17,11 +17,10 @@ import type { CustomerSummary } from "./customers.types";
 
 type Props = {
   summary: CustomerSummary;
-  totalByMonth: number[]; // cumulative totals for last 6 months
-  newByMonth: number[]; // new customers per month
+  totalByMonth: number[];
+  newByMonth: number[];
 };
 
-// Center label inside the donut
 function DonutCenter({ total }: { total: number }) {
   return (
     <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
@@ -55,13 +54,13 @@ export function CustomerCharts({ summary, totalByMonth, newByMonth }: Props) {
   ].filter((d) => d.value > 0);
 
   return (
-    <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-      {/* Growth line chart */}
-      <Paper variant="outlined" sx={{ flex: "1 1 55%", minWidth: 0, p: 2.5 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
+      {/* Growth line chart - full width */}
+      <Paper variant="outlined" sx={{ p: 2.5 }}>
         <Typography variant="subtitle1" fontWeight={600} mb={2}>
           Customer Growth
         </Typography>
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={220}>
           <LineChart
             data={lineData}
             margin={{ top: 4, right: 12, left: -10, bottom: 0 }}
@@ -113,48 +112,50 @@ export function CustomerCharts({ summary, totalByMonth, newByMonth }: Props) {
         </ResponsiveContainer>
       </Paper>
 
-      {/* Tier donut */}
-      <Paper variant="outlined" sx={{ flex: "1 1 38%", minWidth: 0, p: 2.5 }}>
+      {/* Tier donut - full width */}
+      <Paper variant="outlined" sx={{ p: 2.5 }}>
         <Typography variant="subtitle1" fontWeight={600} mb={2}>
           Customer Tiers
         </Typography>
-        <ResponsiveContainer width="100%" height={240}>
-          <PieChart>
-            <Pie
-              data={donutData}
-              cx="50%"
-              cy="50%"
-              innerRadius={70}
-              outerRadius={100}
-              paddingAngle={3}
-              dataKey="value"
-            >
-              {donutData.map((entry) => (
-                <Cell
-                  key={entry.name}
-                  fill={TIER_COLOR[entry.name as keyof typeof TIER_COLOR]}
-                />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value, name) => [`${value} customers`, name]}
-              contentStyle={{
-                background: theme.palette.background.paper,
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 8,
-              }}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: 12 }}
-              formatter={(value) => {
-                const d = donutData.find((x) => x.name === value);
-                const pct = d ? Math.round((d.value / summary.total) * 100) : 0;
-                return `${value} (${pct}%)`;
-              }}
-            />
-            <DonutCenter total={summary.total} />
-          </PieChart>
-        </ResponsiveContainer>
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie
+                data={donutData}
+                cx="50%"
+                cy="50%"
+                innerRadius={70}
+                outerRadius={100}
+                paddingAngle={3}
+                dataKey="value"
+              >
+                {donutData.map((entry) => (
+                  <Cell
+                    key={entry.name}
+                    fill={TIER_COLOR[entry.name as keyof typeof TIER_COLOR]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value, name) => [`${value} customers`, name]}
+                contentStyle={{
+                  background: theme.palette.background.paper,
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 8,
+                }}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: 12 }}
+                formatter={(value) => {
+                  const d = donutData.find((x) => x.name === value);
+                  const pct = d ? Math.round((d.value / summary.total) * 100) : 0;
+                  return `${value} (${pct}%)`;
+                }}
+              />
+              <DonutCenter total={summary.total} />
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
       </Paper>
     </Box>
   );

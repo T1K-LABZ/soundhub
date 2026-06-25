@@ -1,10 +1,19 @@
 import {
   AddOutlined,
+  MoreVertOutlined,
   SearchOutlined,
   SettingsOutlined,
   ShoppingBagOutlined,
 } from "@mui/icons-material";
-import { Box, Button } from "@mui/material";
+import {
+  Box,
+  Button,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from "@mui/material";
 import { useState } from "react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { calcSalesSummary, filterJobs, JOBS } from "./sales.data";
@@ -36,6 +45,7 @@ export function SalesPage() {
   const [filters, setFilters] = useState<SalesFilters>(DEFAULT_SALES_FILTERS);
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
 
   const summary = calcSalesSummary(JOBS);
   const filtered = filterJobs(JOBS, filters);
@@ -67,7 +77,7 @@ export function SalesPage() {
       <SalesSummaryBar summary={summary} />
 
       {/* 2. Quick action buttons */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3, alignItems: "center" }}>
         <Button
           variant="contained"
           color="warning"
@@ -81,22 +91,28 @@ export function SalesPage() {
           startIcon={<ShoppingBagOutlined />}
           onClick={() => setOpenModal("walkIn")}
         >
-          Walk-In Purchase
+          Walk-In
         </Button>
-        <Button
-          variant="outlined"
-          startIcon={<SearchOutlined />}
-          onClick={() => setOpenModal("plateSearch")}
+        <IconButton
+          onClick={(e) => setMoreAnchor(e.currentTarget)}
+          size="small"
         >
-          Search by Plate
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<SettingsOutlined />}
-          onClick={() => setOpenModal("manageServices")}
+          <MoreVertOutlined />
+        </IconButton>
+        <Menu
+          anchorEl={moreAnchor}
+          open={Boolean(moreAnchor)}
+          onClose={() => setMoreAnchor(null)}
         >
-          Manage Services
-        </Button>
+          <MenuItem onClick={() => { setOpenModal("plateSearch"); setMoreAnchor(null); }}>
+            <ListItemIcon><SearchOutlined fontSize="small" /></ListItemIcon>
+            <ListItemText>Search by Plate</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => { setOpenModal("manageServices"); setMoreAnchor(null); }}>
+            <ListItemIcon><SettingsOutlined fontSize="small" /></ListItemIcon>
+            <ListItemText>Manage Services</ListItemText>
+          </MenuItem>
+        </Menu>
       </Box>
 
       {/* 3. Filters bar */}

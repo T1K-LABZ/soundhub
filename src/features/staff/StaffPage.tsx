@@ -1,5 +1,5 @@
-import { AddOutlined, SettingsOutlined } from "@mui/icons-material";
-import { Box, Button } from "@mui/material";
+import { AddOutlined, MoreVertOutlined, SettingsOutlined } from "@mui/icons-material";
+import { Box, Button, IconButton, Menu, MenuItem } from "@mui/material";
 import { useState } from "react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { AddStaffModal } from "./AddStaffModal";
@@ -27,8 +27,8 @@ export function StaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>(STAFF_MEMBERS);
   const [filters, setFilters] = useState<StaffFilters>(DEFAULT_FILTERS);
   const [view, setView] = useState<"grid" | "table">("grid");
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
-  // Modal state
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<StaffMember | null>(null);
   const [viewTarget, setViewTarget] = useState<StaffMember | null>(null);
@@ -40,12 +40,10 @@ export function StaffPage() {
 
   function handleSave(form: AddStaffForm) {
     if (editTarget) {
-      // Edit existing
       setStaff((prev) =>
         prev.map((s) => (s.id === editTarget.id ? { ...s, ...form } : s)),
       );
     } else {
-      // Add new
       const newMember: StaffMember = {
         id: `st-${Date.now()}`,
         ...form,
@@ -83,27 +81,43 @@ export function StaffPage() {
         title="Staff Management"
         subtitle="Manage your team, track performance and control system access"
         action={
-          <Box sx={{ display: "flex", gap: 1.5 }}>
-            <Button
-              variant="outlined"
-              startIcon={<SettingsOutlined />}
-              onClick={() => setRolesOpen(true)}
-            >
-              Manage Roles
-            </Button>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
             <Button
               variant="contained"
               startIcon={<AddOutlined />}
+              size="small"
               onClick={() => {
                 setEditTarget(null);
                 setAddOpen(true);
               }}
             >
-              Add New Staff
+              Add Staff
             </Button>
+            <IconButton
+              size="small"
+              onClick={(e) => setMenuAnchor(e.currentTarget)}
+            >
+              <MoreVertOutlined />
+            </IconButton>
           </Box>
         }
       />
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={() => setMenuAnchor(null)}
+      >
+        <MenuItem
+          onClick={() => {
+            setMenuAnchor(null);
+            setRolesOpen(true);
+          }}
+          sx={{ gap: 1, fontSize: 13 }}
+        >
+          <SettingsOutlined fontSize="small" /> Manage Roles
+        </MenuItem>
+      </Menu>
 
       <StaffSummaryBar {...summary} />
 
@@ -144,7 +158,6 @@ export function StaffPage() {
         performances={STAFF_PERFORMANCES}
       />
 
-      {/* Modals */}
       <AddStaffModal
         open={addOpen}
         editing={editTarget}

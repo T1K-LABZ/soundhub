@@ -2,8 +2,17 @@ import {
   AddOutlined,
   CampaignOutlined,
   DownloadOutlined,
+  MoreVertOutlined,
 } from "@mui/icons-material";
-import { Box, Button } from "@mui/material";
+import {
+  Box,
+  Button,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from "@mui/material";
 import { useState } from "react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { AddCustomerModal } from "./AddCustomerModal";
@@ -41,6 +50,7 @@ export function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>(CUSTOMERS);
   const [filters, setFilters] = useState<CustomerFilters>(DEFAULT_FILTERS);
   const [view, setView] = useState<"grid" | "table">("grid");
+  const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
 
   // Modal state
   const [addOpen, setAddOpen] = useState(false);
@@ -89,27 +99,39 @@ export function CustomersPage() {
         title="Customer Management"
         subtitle="Track customers, loyalty and send offers"
         action={
-          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
-            <Button
-              variant="outlined"
-              startIcon={<CampaignOutlined />}
-              onClick={() => setBulkOfferOpen(true)}
-            >
-              Send Offer / Campaign
-            </Button>
-            <Button variant="outlined" startIcon={<DownloadOutlined />}>
-              Export List
-            </Button>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
             <Button
               variant="contained"
+              size="small"
               startIcon={<AddOutlined />}
               onClick={() => {
                 setEditTarget(null);
                 setAddOpen(true);
               }}
+              sx={{ whiteSpace: "nowrap" }}
             >
               Add Customer
             </Button>
+            <IconButton
+              onClick={(e) => setMoreAnchor(e.currentTarget)}
+              size="small"
+            >
+              <MoreVertOutlined />
+            </IconButton>
+            <Menu
+              anchorEl={moreAnchor}
+              open={Boolean(moreAnchor)}
+              onClose={() => setMoreAnchor(null)}
+            >
+              <MenuItem onClick={() => { setBulkOfferOpen(true); setMoreAnchor(null); }}>
+                <ListItemIcon><CampaignOutlined fontSize="small" /></ListItemIcon>
+                <ListItemText>Send Campaign</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => setMoreAnchor(null)}>
+                <ListItemIcon><DownloadOutlined fontSize="small" /></ListItemIcon>
+                <ListItemText>Export List</ListItemText>
+              </MenuItem>
+            </Menu>
           </Box>
         }
       />

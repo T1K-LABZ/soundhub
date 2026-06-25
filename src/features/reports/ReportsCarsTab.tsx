@@ -2,11 +2,7 @@ import {
   Box,
   Card,
   CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Grid,
   Typography,
 } from "@mui/material";
 import {
@@ -37,12 +33,9 @@ const CAR_MAKE_COLORS = [
 export function ReportsCarsTab({ jobs }: Props) {
   const carStats = buildCarStats(jobs);
 
-  // Total unique cars (by plate)
   const uniquePlates = new Set(jobs.map((j) => j.carPlate)).size;
-  // Total car makes
   const makeSet = new Set(jobs.map((j) => j.carMake));
 
-  // Make distribution for pie
   const makeMap: Record<string, number> = {};
   for (const j of jobs) {
     makeMap[j.carMake] = (makeMap[j.carMake] ?? 0) + 1;
@@ -51,7 +44,6 @@ export function ReportsCarsTab({ jobs }: Props) {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
 
-  // Top 5 cars by jobs count
   const top5 = carStats.slice(0, 5);
 
   return (
@@ -125,9 +117,8 @@ export function ReportsCarsTab({ jobs }: Props) {
         </Card>
       </Box>
 
-      {/* Pie chart + top models table */}
+      {/* Pie chart + top car models as cards */}
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-        {/* Car make pie */}
         <Card
           sx={{
             flex: "1 1 38%",
@@ -166,88 +157,51 @@ export function ReportsCarsTab({ jobs }: Props) {
           </CardContent>
         </Card>
 
-        {/* Top car models table */}
-        <Card
-          sx={{
-            flex: "1 1 55%",
-            minWidth: 280,
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "divider",
-          }}
-        >
-          <CardContent sx={{ p: 0 }}>
-            <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-              <Typography variant="subtitle2" fontWeight={600}>
-                Top Car Models
-              </Typography>
-            </Box>
-            <Box sx={{ overflowX: "auto" }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "action.hover" }}>
-                    {[
-                      "#",
-                      "Make",
-                      "Model",
-                      "Variant",
-                      "Jobs",
-                      "Top Service",
-                      "Avg Spend",
-                      "Issues",
-                    ].map((h) => (
-                      <TableCell
-                        key={h}
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: 11,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {top5.map((c) => (
-                    <TableRow
-                      key={`${c.carMake}-${c.carModel}-${c.carVariant}`}
-                      hover
-                    >
-                      <TableCell sx={{ fontSize: 11, fontWeight: 700 }}>
-                        {c.rank}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 11 }}>{c.carMake}</TableCell>
-                      <TableCell sx={{ fontSize: 11 }}>{c.carModel}</TableCell>
-                      <TableCell sx={{ fontSize: 11, color: "text.secondary" }}>
-                        {c.carVariant}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 11, fontWeight: 700 }}>
-                        {c.jobsCount}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 11 }}>
-                        {c.mostCommonService}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 11 }}>
-                        {formatKsh(c.avgSpend)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: 11,
-                          color:
-                            c.issuesCount > 0 ? "#D97706" : "text.secondary",
-                        }}
-                      >
-                        {c.issuesCount}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          </CardContent>
-        </Card>
+        <Box sx={{ flex: "1 1 55%", minWidth: 280 }}>
+          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+            Top Car Models
+          </Typography>
+          <Grid container spacing={2}>
+            {top5.map((c) => (
+              <Grid key={`${c.carMake}-${c.carModel}-${c.carVariant}`} size={{ xs: 12, sm: 6 }}>
+                <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+                  <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        #{c.rank}
+                      </Typography>
+                      <Typography variant="caption" fontWeight={700}>
+                        {c.jobsCount} jobs
+                      </Typography>
+                    </Box>
+
+                    <Typography variant="subtitle2" fontWeight={700} mb={0.5}>
+                      {c.carMake} {c.carModel}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
+                      {c.carVariant}
+                    </Typography>
+
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">Top Service</Typography>
+                      <Typography variant="caption" fontWeight={600}>{c.mostCommonService}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" color="text.secondary">Avg Spend</Typography>
+                      <Typography variant="caption" fontWeight={700}>{formatKsh(c.avgSpend)}</Typography>
+                    </Box>
+                    {c.issuesCount > 0 && (
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">Issues</Typography>
+                        <Typography variant="caption" fontWeight={700} color="#D97706">{c.issuesCount}</Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       </Box>
     </Box>
   );

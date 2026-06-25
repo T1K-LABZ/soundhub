@@ -3,11 +3,7 @@ import {
   Card,
   CardContent,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Grid,
   Typography,
 } from "@mui/material";
 import {
@@ -29,7 +25,6 @@ import { formatKsh } from "./reports.utils";
 
 type Props = { productStats: ProductStat[] };
 
-// Rank badge — gold / silver / bronze for top 3, otherwise grey number
 function RankBadge({ rank }: { rank: number }) {
   const colors: Record<number, string> = {
     1: "#f59e0b",
@@ -57,10 +52,70 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
+function ProductCard({ product }: { product: ProductStat }) {
+  return (
+    <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+          <RankBadge rank={product.rank} />
+          <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ flex: 1 }}>
+            {product.productName}
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: "flex", gap: 0.5, mb: 1.5 }}>
+          <Chip
+            label={product.category}
+            size="small"
+            sx={{
+              fontSize: 10,
+              height: 18,
+              bgcolor: (CATEGORY_COLOR[product.category] ?? "#94a3b8") + "22",
+              color: CATEGORY_COLOR[product.category] ?? "#94a3b8",
+              fontWeight: 600,
+            }}
+          />
+          <Typography variant="caption" color="text.secondary">
+            {product.brand}
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Units Sold</Typography>
+          <Typography variant="caption" fontWeight={700}>{product.unitsSold}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Revenue</Typography>
+          <Typography variant="caption" fontWeight={700}>{formatKsh(product.revenue)}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Avg Price</Typography>
+          <Typography variant="caption">{formatKsh(product.avgPrice)}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography variant="caption" color="text.secondary">Stock Left</Typography>
+          <Typography
+            variant="caption"
+            fontWeight={700}
+            color={
+              product.stockLeft === 0
+                ? "#DC2626"
+                : product.stockLeft <= 3
+                  ? "#D97706"
+                  : "text.primary"
+            }
+          >
+            {product.stockLeft}
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ReportsProductsTab({ productStats }: Props) {
   const top10 = productStats.slice(0, 10);
 
-  // Category performance for donut
   const catMap: Record<string, { units: number; revenue: number }> = {};
   for (const p of productStats) {
     if (!catMap[p.category]) catMap[p.category] = { units: 0, revenue: 0 };
@@ -72,7 +127,6 @@ export function ReportsProductsTab({ productStats }: Props) {
     value: v.revenue,
   }));
 
-  // Dead stock = 0 units sold AND more than 0 in stock
   const deadStock = productStats.filter(
     (p) => p.unitsSold === 0 && p.stockLeft > 0,
   );
@@ -173,99 +227,17 @@ export function ReportsProductsTab({ productStats }: Props) {
         </Card>
       </Box>
 
-      {/* Product performance table */}
-      <Card
-        sx={{
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-          mb: 3,
-        }}
-      >
-        <CardContent sx={{ p: 0 }}>
-          <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-            <Typography variant="subtitle2" fontWeight={600}>
-              Product Performance
-            </Typography>
-          </Box>
-          <Box sx={{ overflowX: "auto" }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: "action.hover" }}>
-                  {[
-                    "#",
-                    "Product",
-                    "Brand",
-                    "Category",
-                    "Units Sold",
-                    "Revenue",
-                    "Avg Price",
-                    "Stock Left",
-                  ].map((h) => (
-                    <TableCell
-                      key={h}
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: 12,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {top10.map((p) => (
-                  <TableRow key={p.productName} hover>
-                    <TableCell>
-                      <RankBadge rank={p.rank} />
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{p.productName}</TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{p.brand}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={p.category}
-                        size="small"
-                        sx={{
-                          fontSize: 10,
-                          height: 18,
-                          bgcolor:
-                            (CATEGORY_COLOR[p.category] ?? "#94a3b8") + "22",
-                          color: CATEGORY_COLOR[p.category] ?? "#94a3b8",
-                          fontWeight: 600,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12, fontWeight: 600 }}>
-                      {p.unitsSold}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>
-                      {formatKsh(p.revenue)}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>
-                      {formatKsh(p.avgPrice)}
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontSize: 12,
-                        color:
-                          p.stockLeft === 0
-                            ? "#DC2626"
-                            : p.stockLeft <= 3
-                              ? "#D97706"
-                              : "text.primary",
-                      }}
-                    >
-                      {p.stockLeft}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
-        </CardContent>
-      </Card>
+      {/* Product cards grid */}
+      <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+        Product Performance
+      </Typography>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {top10.map((p) => (
+          <Grid key={p.productName} size={{ xs: 12, sm: 6, md: 4 }}>
+            <ProductCard product={p} />
+          </Grid>
+        ))}
+      </Grid>
 
       {/* Dead stock alert */}
       {deadStock.length > 0 && (
@@ -277,7 +249,7 @@ export function ReportsProductsTab({ productStats }: Props) {
               color="#D97706"
               sx={{ mb: 1 }}
             >
-              ⚠️ Dead Stock Alert — {deadStock.length} products with 0 sales
+              Dead Stock Alert — {deadStock.length} products with 0 sales
             </Typography>
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
               {deadStock.map((p) => (

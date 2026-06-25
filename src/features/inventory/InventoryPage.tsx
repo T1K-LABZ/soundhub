@@ -2,9 +2,19 @@ import {
   AssignmentReturnOutlined,
   CallReceivedOutlined,
   DeleteOutlined,
+  LocalShippingOutlined,
   LockOutlined,
+  MoreVertOutlined,
 } from "@mui/icons-material";
-import { Box, Button } from "@mui/material";
+import {
+  Box,
+  Button,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from "@mui/material";
 import { useState } from "react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import {
@@ -25,12 +35,14 @@ import { ProcessReturnModal } from "./ProcessReturnModal";
 import { ReceiveStockModal } from "./ReceiveStockModal";
 import { ReserveStockModal } from "./ReserveStockModal";
 import { WriteOffModal } from "./WriteOffModal";
+import { CreateIncomingModal } from "./CreateIncomingModal";
+import { ArriveStockModal } from "./ArriveStockModal";
 import { calcSummary, filterMovements } from "./inventory.utils";
 import { InventoryChartControls } from "./InventoryChartControls";
 import { InventoryStockChart } from "./InventoryStockChart";
 import { InventoryMovementRanking } from "./InventoryMovementRanking";
 import { InventoryInsightCards } from "./InventoryInsightCards";
-import type { TimeRange } from "./inventory.types";
+import type { StockMovement, TimeRange } from "./inventory.types";
 
 const DEFAULT_FILTERS: InventoryFilters = {
   search: "",
@@ -42,12 +54,14 @@ const DEFAULT_FILTERS: InventoryFilters = {
   dateTo: "",
 };
 
-type ModalType = "receive" | "reserve" | "writeoff" | "return" | null;
+type ModalType = "receive" | "reserve" | "writeoff" | "return" | "incoming" | null;
 
 export function InventoryPage() {
   const [filters, setFilters] = useState<InventoryFilters>(DEFAULT_FILTERS);
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [productNameFilter, setProductNameFilter] = useState<string[]>([]);
+  const [incomingToArrive, setIncomingToArrive] = useState<StockMovement | null>(null);
+  const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
 
   // Chart state
   const [chartRange, setChartRange] = useState<TimeRange>("30D");
@@ -97,6 +111,16 @@ export function InventoryPage() {
     setFilters(f);
   }
 
+  function handleArriveClick(movement: StockMovement) {
+    setIncomingToArrive(movement);
+  }
+
+  function handleArriveConfirm(movementId: string, arrivedQuantity: number) {
+    // TODO: call inventory API — update movement status and add to stock
+    console.log("Arrive stock:", { movementId, arrivedQuantity });
+    setIncomingToArrive(null);
+  }
+
   return (
     <Box>
       <PageHeader
@@ -112,7 +136,7 @@ export function InventoryPage() {
       />
 
       {/* 2. Quick action buttons */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3, alignItems: "center" }}>
         <Button
           variant="contained"
           startIcon={<CallReceivedOutlined />}
@@ -122,26 +146,35 @@ export function InventoryPage() {
         </Button>
         <Button
           variant="outlined"
-          startIcon={<LockOutlined />}
-          onClick={() => setOpenModal("reserve")}
+          startIcon={<LocalShippingOutlined />}
+          onClick={() => setOpenModal("incoming")}
         >
-          Reserve Stock
+          Create Incoming
         </Button>
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteOutlined />}
-          onClick={() => setOpenModal("writeoff")}
+        <IconButton
+          onClick={(e) => setMoreAnchor(e.currentTarget)}
+          size="small"
         >
-          Write Off / Damaged
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<AssignmentReturnOutlined />}
-          onClick={() => setOpenModal("return")}
+          <MoreVertOutlined />
+        </IconButton>
+        <Menu
+          anchorEl={moreAnchor}
+          open={Boolean(moreAnchor)}
+          onClose={() => setMoreAnchor(null)}
         >
-          Process Return
-        </Button>
+          <MenuItem onClick={() => { setOpenModal("reserve"); setMoreAnchor(null); }}>
+            <ListItemIcon><LockOutlined fontSize="small" /></ListItemIcon>
+            <ListItemText>Reserve Stock</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => { setOpenModal("writeoff"); setMoreAnchor(null); }}>
+            <ListItemIcon><DeleteOutlined fontSize="small" color="error" /></ListItemIcon>
+            <ListItemText>Write Off / Damaged</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => { setOpenModal("return"); setMoreAnchor(null); }}>
+            <ListItemIcon><AssignmentReturnOutlined fontSize="small" /></ListItemIcon>
+            <ListItemText>Process Return</ListItemText>
+          </MenuItem>
+        </Menu>
       </Box>
 
       {/* 3. Filters bar */}
@@ -173,7 +206,7 @@ export function InventoryPage() {
       </Box>
 
       {/* 5. Stock movement table */}
-      <InventoryTable movements={filtered} />
+      <InventoryTable movements={filtered} onArriveClick={handleArriveClick} />
 
       {/* 6. Low stock alert panel */}
       <LowStockPanel products={INVENTORY_PRODUCTS} />
@@ -181,6 +214,10 @@ export function InventoryPage() {
       {/* 7. Action modals */}
       <ReceiveStockModal
         open={openModal === "receive"}
+        onClose={() => setOpenModal(null)}
+      />
+      <CreateIncomingModal
+        open={openModal === "incoming"}
         onClose={() => setOpenModal(null)}
       />
       <ReserveStockModal
@@ -194,6 +231,12 @@ export function InventoryPage() {
       <ProcessReturnModal
         open={openModal === "return"}
         onClose={() => setOpenModal(null)}
+      />
+      <ArriveStockModal
+        open={incomingToArrive !== null}
+        incoming={incomingToArrive}
+        onClose={() => setIncomingToArrive(null)}
+        onConfirm={handleArriveConfirm}
       />
     </Box>
   );

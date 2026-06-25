@@ -3,11 +3,7 @@ import {
   Button,
   Card,
   CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Grid,
   Typography,
 } from "@mui/material";
 import type { OutstandingPayment } from "./reports.types";
@@ -16,18 +12,93 @@ import { formatKsh } from "./reports.utils";
 
 type Props = { outstanding: OutstandingPayment[] };
 
+function OutstandingCard({ item }: { item: OutstandingPayment }) {
+  return (
+    <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Typography variant="caption" color="text.secondary">{item.date}</Typography>
+          <Box
+            sx={{
+              display: "inline-block",
+              px: 1,
+              py: 0.3,
+              borderRadius: 1,
+              bgcolor: DAYS_OUTSTANDING_COLOR(item.daysOutstanding) + "22",
+              color: DAYS_OUTSTANDING_COLOR(item.daysOutstanding),
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            {item.daysOutstanding}d outstanding
+          </Box>
+        </Box>
+
+        <Typography variant="subtitle2" fontWeight={700} mb={0.5}>
+          {item.customerName}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+          {item.customerPhone} · {item.carPlate}
+        </Typography>
+
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Job Ref</Typography>
+          <Typography variant="caption" sx={{ fontFamily: "monospace" }}>{item.jobRef}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Total</Typography>
+          <Typography variant="caption" fontWeight={700}>{formatKsh(item.grandTotal)}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Paid</Typography>
+          <Typography variant="caption" fontWeight={700} color="#16A34A">{formatKsh(item.amountPaid)}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
+          <Typography variant="caption" color="text.secondary">Balance Owed</Typography>
+          <Typography variant="caption" fontWeight={700} color="#DC2626">{formatKsh(item.balanceOwed)}</Typography>
+        </Box>
+
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            variant="contained"
+            size="small"
+            fullWidth
+            sx={{
+              fontSize: 11,
+              py: 0.5,
+              bgcolor: "#16A34A",
+              "&:hover": { bgcolor: "#15803d" },
+            }}
+          >
+            Mark Paid
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            fullWidth
+            sx={{ fontSize: 11, py: 0.5 }}
+          >
+            View
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ReportsOutstandingSection({ outstanding }: Props) {
   const totalBalance = outstanding.reduce((s, o) => s + o.balanceOwed, 0);
 
   return (
     <Box sx={{ mt: 4 }}>
-      {/* Section header */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           mb: 2,
+          flexWrap: "wrap",
+          gap: 1,
         }}
       >
         <Box>
@@ -54,149 +125,23 @@ export function ReportsOutstandingSection({ outstanding }: Props) {
         </Box>
       </Box>
 
-      <Card sx={{ borderRadius: 2, border: "1.5px solid #DC2626" }}>
-        <CardContent sx={{ p: 0 }}>
-          <Box sx={{ overflowX: "auto" }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: "#fee2e2" }}>
-                  {[
-                    "Customer",
-                    "Phone",
-                    "Car",
-                    "Job Ref",
-                    "Date",
-                    "Total",
-                    "Paid",
-                    "Balance",
-                    "Days",
-                    "Actions",
-                  ].map((h) => (
-                    <TableCell
-                      key={h}
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: 12,
-                        whiteSpace: "nowrap",
-                        color: "#DC2626",
-                      }}
-                    >
-                      {h}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {outstanding.map((o) => (
-                  <TableRow key={o.id} hover>
-                    <TableCell sx={{ fontSize: 12, fontWeight: 600 }}>
-                      {o.customerName}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12, color: "text.secondary" }}>
-                      {o.customerPhone}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{o.carPlate}</TableCell>
-                    <TableCell sx={{ fontSize: 12, fontFamily: "monospace" }}>
-                      {o.jobRef}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>{o.date}</TableCell>
-                    <TableCell sx={{ fontSize: 12 }}>
-                      {formatKsh(o.grandTotal)}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: 12, color: "#16A34A" }}>
-                      {formatKsh(o.amountPaid)}
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontSize: 12, fontWeight: 700, color: "#DC2626" }}
-                    >
-                      {formatKsh(o.balanceOwed)}
-                    </TableCell>
-                    {/* Color-coded days outstanding */}
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: "inline-block",
-                          px: 1,
-                          py: 0.3,
-                          borderRadius: 1,
-                          bgcolor:
-                            DAYS_OUTSTANDING_COLOR(o.daysOutstanding) + "22",
-                          color: DAYS_OUTSTANDING_COLOR(o.daysOutstanding),
-                          fontSize: 11,
-                          fontWeight: 700,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {o.daysOutstanding}d
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 0.8 }}>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          sx={{
-                            fontSize: 10,
-                            py: 0.4,
-                            px: 1,
-                            minWidth: 0,
-                            bgcolor: "#16A34A",
-                            "&:hover": { bgcolor: "#15803d" },
-                          }}
-                        >
-                          Mark Paid
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          sx={{ fontSize: 10, py: 0.4, px: 1, minWidth: 0 }}
-                        >
-                          View
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-                {outstanding.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={10}
-                      sx={{
-                        textAlign: "center",
-                        py: 4,
-                        color: "text.disabled",
-                        fontSize: 13,
-                      }}
-                    >
-                      No outstanding payments 🎉
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </Box>
-
-          {/* Bold total footer */}
-          {outstanding.length > 0 && (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                px: 2,
-                py: 1.5,
-                borderTop: "1px solid",
-                borderColor: "divider",
-                bgcolor: "action.hover",
-              }}
-            >
-              <Typography variant="body2" fontWeight={700} color="#DC2626">
-                Total Outstanding: {formatKsh(totalBalance)}
-              </Typography>
-            </Box>
-          )}
-        </CardContent>
-      </Card>
+      {outstanding.length === 0 ? (
+        <Card sx={{ borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
+          <CardContent>
+            <Typography variant="body2" color="text.disabled" textAlign="center" py={4}>
+              No outstanding payments
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        <Grid container spacing={2}>
+          {outstanding.map((o) => (
+            <Grid key={o.id} size={{ xs: 12, sm: 6, md: 4 }}>
+              <OutstandingCard item={o} />
+            </Grid>
+          ))}
+        </Grid>
+      )}
     </Box>
   );
 }

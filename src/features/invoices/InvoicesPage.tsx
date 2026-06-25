@@ -1,36 +1,50 @@
-import { AddOutlined, DownloadOutlined } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Chip,
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import { useState } from "react";
+import { AddOutlined } from "@mui/icons-material";
+import { Box, Button, Grid, Typography } from "@mui/material";
+import { useMemo, useState } from "react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { MOCK_INVOICES } from "./invoice.data";
 import type { Invoice } from "./invoice.types";
-import {
-  downloadInvoicePdf,
-  formatKsh,
-  getInvoiceTotal,
-} from "./invoice.utils";
+import { downloadInvoicePdf, getInvoiceTotal } from "./invoice.utils";
 import { CreateInvoiceModal } from "./CreateInvoiceModal";
+import { InvoiceCard } from "./InvoiceCard";
+import { InvoiceFiltersBar, type InvoiceFilters } from "./InvoiceFiltersBar";
 import { InvoicePreviewModal } from "./InvoicePreviewModal";
+import { InvoiceSummaryBar } from "./InvoiceSummaryBar";
 
 export function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [filters, setFilters] = useState<InvoiceFilters>({
+    search: "",
+    dateFrom: "",
+    dateTo: "",
+  });
+
+  const filteredInvoices = useMemo(() => {
+    let result = invoices;
+
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      result = result.filter(
+        (inv) =>
+          inv.invoiceNumber.toLowerCase().includes(q) ||
+          inv.clientName.toLowerCase().includes(q) ||
+          inv.clientEmail.toLowerCase().includes(q),
+      );
+    }
+
+    if (filters.dateFrom) {
+      result = result.filter((inv) => inv.date >= filters.dateFrom);
+    }
+
+    if (filters.dateTo) {
+      result = result.filter((inv) => inv.date <= filters.dateTo);
+    }
+
+    return result;
+  }, [invoices, filters]);
 
   function handleSaved(saved: Invoice) {
     setInvoices((prev) => {
@@ -61,94 +75,36 @@ export function InvoicesPage() {
         }
       />
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Invoice #</TableCell>
-              <TableCell>Client</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Items</TableCell>
-              <TableCell align="right">Total</TableCell>
-              <TableCell align="center">Download</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {invoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    No invoices yet — create your first one
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              invoices.map((invoice) => (
-                <TableRow
-                  key={invoice.id}
-                  hover
-                  onClick={() => setPreviewInvoice(invoice)}
-                  sx={{ cursor: "pointer" }}
-                >
-                  <TableCell>
-                    <Typography variant="body2" fontWeight={600}>
-                      {invoice.invoiceNumber}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {invoice.clientName}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {invoice.clientEmail}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{invoice.date}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={`${invoice.lineItems.length} item${invoice.lineItems.length !== 1 ? "s" : ""}`}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Typography
-                      variant="body2"
-                      fontWeight={600}
-                      color="primary"
-                    >
-                      {formatKsh(getInvoiceTotal(invoice))}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Download PDF">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadInvoicePdf(invoice);
-                        }}
-                      >
-                        <DownloadOutlined fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <InvoiceSummaryBar invoices={invoices} />
 
-      {/* Create new invoice */}
+      <InvoiceFiltersBar filters={filters} onChange={setFilters} />
+
+      {filteredInvoices.length === 0 ? (
+        <Box sx={{ textAlign: "center", py: 8 }}>
+          <Typography variant="body2" color="text.secondary">
+            No invoices found — create your first one
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={2}>
+          {filteredInvoices.map((invoice) => (
+            <Grid key={invoice.id} size={{ xs: 12, sm: 6, md: 4 }}>
+              <InvoiceCard
+                invoice={invoice}
+                onPreview={() => setPreviewInvoice(invoice)}
+                onDownload={() => downloadInvoicePdf(invoice)}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
       <CreateInvoiceModal
         open={createOpen}
         onSaved={handleSaved}
         onClose={() => setCreateOpen(false)}
       />
 
-      {/* Edit existing invoice */}
       <CreateInvoiceModal
         open={Boolean(editInvoice)}
         invoice={editInvoice}
@@ -156,7 +112,6 @@ export function InvoicesPage() {
         onClose={() => setEditInvoice(null)}
       />
 
-      {/* Preview — exposes Edit button which transitions to edit modal */}
       <InvoicePreviewModal
         invoice={previewInvoice}
         onClose={() => setPreviewInvoice(null)}

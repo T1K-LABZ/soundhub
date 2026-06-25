@@ -5,7 +5,7 @@ import {
   PersonOutlined,
   WorkOutlined,
 } from "@mui/icons-material";
-import { Box, Card, CardContent, Grid, Typography } from "@mui/material";
+import { Box, Card, CardContent, Typography } from "@mui/material";
 
 type Props = {
   total: number;
@@ -26,14 +26,20 @@ type CardProps = {
 
 function SummaryCard({ label, value, sub, icon, color }: CardProps) {
   return (
-    <Card variant="outlined" sx={{ height: "100%" }}>
+    <Card
+      variant="outlined"
+      sx={{ height: "100%", minWidth: 140, flex: "1 1 0", display: "flex" }}
+    >
       <CardContent
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 2,
+          gap: 1.5,
           p: 2,
+          height: "100%",
+          boxSizing: "border-box",
           "&:last-child": { pb: 2 },
+          width: "100%",
         }}
       >
         <Box
@@ -49,14 +55,14 @@ function SummaryCard({ label, value, sub, icon, color }: CardProps) {
           {icon}
         </Box>
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="body2" color="text.secondary" display="block" noWrap>
             {label}
           </Typography>
-          <Typography variant="h6" fontWeight={700} noWrap>
+          <Typography variant="h6" fontWeight={700} noWrap sx={{ lineHeight: 1.2 }}>
             {value}
           </Typography>
           {sub && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" noWrap>
               {sub}
             </Typography>
           )}
@@ -75,49 +81,51 @@ export function StaffSummaryBar({
   totalJobsThisMonth,
 }: Props) {
   return (
-    <Grid container spacing={2} sx={{ mb: 3 }} alignItems="stretch">
-      <Grid size={{ xs: 12, sm: 6, md: "auto" }} sx={{ flex: 1 }}>
+    <Box
+      sx={{
+        display: "flex",
+        gap: 2,
+        mb: 3,
+        overflowX: "auto",
+        pb: 0.5,
+        "&::-webkit-scrollbar": { height: 4 },
+        "&::-webkit-scrollbar-thumb": { bgcolor: "grey.400", borderRadius: 2 },
+      }}
+    >
+      <Box sx={{ display: "flex", gap: 2, minWidth: "min-content" }}>
         <SummaryCard
           label="Total Staff"
           value={total.toString()}
-          icon={<GroupOutlined />}
+          icon={<GroupOutlined fontSize="small" />}
           color="#2563EB"
         />
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: "auto" }} sx={{ flex: 1 }}>
         <SummaryCard
           label="Active Staff"
           value={active.toString()}
-          icon={<PersonOutlined />}
+          icon={<PersonOutlined fontSize="small" />}
           color="#16A34A"
         />
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: "auto" }} sx={{ flex: 1 }}>
         <SummaryCard
           label="On Leave"
           value={onLeave.toString()}
-          icon={<PersonOffOutlined />}
+          icon={<PersonOffOutlined fontSize="small" />}
           color="#D97706"
         />
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: "auto" }} sx={{ flex: 1 }}>
         <SummaryCard
-          label="Top Performer This Month"
+          label="Top Performer"
           value={topPerformerName}
           sub={`${topPerformerJobs} jobs`}
-          icon={<EmojiEventsOutlined />}
+          icon={<EmojiEventsOutlined fontSize="small" />}
           color="#9333EA"
         />
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6, md: "auto" }} sx={{ flex: 1 }}>
         <SummaryCard
-          label="Total Jobs This Month"
+          label="Jobs This Month"
           value={totalJobsThisMonth.toString()}
           sub="All staff combined"
-          icon={<WorkOutlined />}
+          icon={<WorkOutlined fontSize="small" />}
           color="#0891B2"
         />
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
 }

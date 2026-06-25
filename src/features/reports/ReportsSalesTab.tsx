@@ -3,14 +3,9 @@ import {
   Box,
   Card,
   CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Typography,
   Chip,
+  Grid,
+  Typography,
 } from "@mui/material";
 import {
   PieChart,
@@ -42,7 +37,6 @@ const PAYMENT_METHOD_COLOR: Record<string, string> = {
 };
 
 function ServiceTypeCharts({ jobs }: { jobs: Job[] }) {
-  // Service type donut
   const svcMap: Record<string, number> = {};
   const svcRevMap: Record<string, number> = {};
   for (const j of jobs) {
@@ -58,7 +52,6 @@ function ServiceTypeCharts({ jobs }: { jobs: Job[] }) {
     value,
   }));
 
-  // Payment method pie
   const pmMap: Record<string, number> = {};
   for (const j of jobs)
     pmMap[j.paymentMethod] = (pmMap[j.paymentMethod] ?? 0) + 1;
@@ -69,7 +62,6 @@ function ServiceTypeCharts({ jobs }: { jobs: Job[] }) {
 
   return (
     <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
-      {/* Service type donut */}
       <Card
         sx={{
           flex: "1 1 28%",
@@ -111,7 +103,6 @@ function ServiceTypeCharts({ jobs }: { jobs: Job[] }) {
         </CardContent>
       </Card>
 
-      {/* Revenue by service */}
       <Card
         sx={{
           flex: "1 1 38%",
@@ -160,7 +151,6 @@ function ServiceTypeCharts({ jobs }: { jobs: Job[] }) {
         </CardContent>
       </Card>
 
-      {/* Payment method pie */}
       <Card
         sx={{
           flex: "1 1 28%",
@@ -201,14 +191,79 @@ function ServiceTypeCharts({ jobs }: { jobs: Job[] }) {
   );
 }
 
-export function ReportsSalesTab({ jobs }: Props) {
-  const [page, setPage] = useState(0);
-  const rowsPerPage = 10;
-  const paginated = jobs.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage,
-  );
+function SaleCard({ job }: { job: Job }) {
+  const paid =
+    job.paymentStatus === "Paid"
+      ? job.grandTotal
+      : (job.depositAmount ?? 0);
+  const balance =
+    job.balanceRemaining ??
+    (job.paymentStatus === "Unpaid" ? job.grandTotal : 0);
 
+  return (
+    <Card variant="outlined" sx={{ borderRadius: 2, height: "100%" }}>
+      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            {job.createdAt.slice(0, 10)}
+          </Typography>
+          <Typography variant="caption" sx={{ fontFamily: "monospace" }}>
+            {job.jobRef}
+          </Typography>
+        </Box>
+
+        <Typography variant="subtitle2" fontWeight={700} mb={0.5}>
+          {job.customerName}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+          {job.carMake} {job.carModel}
+        </Typography>
+
+        <Box sx={{ display: "flex", gap: 0.5, mb: 1.5 }}>
+          <Chip
+            label={job.serviceType}
+            size="small"
+            sx={{
+              fontSize: 10,
+              height: 20,
+              bgcolor: SERVICE_TYPE_COLOR[job.serviceType] + "22",
+              color: SERVICE_TYPE_COLOR[job.serviceType],
+              fontWeight: 600,
+            }}
+          />
+          <Chip
+            label={job.paymentStatus}
+            size="small"
+            sx={{
+              fontSize: 10,
+              height: 20,
+              bgcolor: PAYMENT_STATUS_COLOR[job.paymentStatus] + "22",
+              color: PAYMENT_STATUS_COLOR[job.paymentStatus],
+              fontWeight: 600,
+            }}
+          />
+        </Box>
+
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Total</Typography>
+          <Typography variant="caption" fontWeight={700}>{formatKsh(job.grandTotal)}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Paid</Typography>
+          <Typography variant="caption" fontWeight={700} color="#16A34A">{formatKsh(paid)}</Typography>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography variant="caption" color="text.secondary">Balance</Typography>
+          <Typography variant="caption" fontWeight={700} color={balance > 0 ? "#DC2626" : "text.secondary"}>
+            {formatKsh(balance)}
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function ReportsSalesTab({ jobs }: Props) {
   const totals = {
     grandTotal: jobs.reduce((s, j) => s + j.grandTotal, 0),
     paid: jobs.reduce(
@@ -230,140 +285,36 @@ export function ReportsSalesTab({ jobs }: Props) {
     <Box>
       <ServiceTypeCharts jobs={jobs} />
 
-      {/* Sales table */}
-      <Card
-        sx={{ borderRadius: 2, border: "1px solid", borderColor: "divider" }}
-      >
-        <CardContent sx={{ p: 0 }}>
-          <Box sx={{ overflowX: "auto" }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: "action.hover" }}>
-                  {[
-                    "Date",
-                    "Job Ref",
-                    "Customer",
-                    "Car",
-                    "Service",
-                    "Total",
-                    "Paid",
-                    "Balance",
-                    "Method",
-                  ].map((h) => (
-                    <TableCell
-                      key={h}
-                      sx={{
-                        fontWeight: 600,
-                        fontSize: 12,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginated.map((job) => {
-                  const paid =
-                    job.paymentStatus === "Paid"
-                      ? job.grandTotal
-                      : (job.depositAmount ?? 0);
-                  const balance =
-                    job.balanceRemaining ??
-                    (job.paymentStatus === "Unpaid" ? job.grandTotal : 0);
-                  return (
-                    <TableRow key={job.id} hover>
-                      <TableCell sx={{ fontSize: 12 }}>
-                        {job.createdAt.slice(0, 10)}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 12, fontFamily: "monospace" }}>
-                        {job.jobRef}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 12 }}>
-                        {job.customerName}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 12 }}>
-                        {job.carMake} {job.carModel}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={job.serviceType}
-                          size="small"
-                          sx={{
-                            fontSize: 10,
-                            height: 20,
-                            bgcolor: SERVICE_TYPE_COLOR[job.serviceType] + "22",
-                            color: SERVICE_TYPE_COLOR[job.serviceType],
-                            fontWeight: 600,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 12 }}>
-                        {formatKsh(job.grandTotal)}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 12, color: "#16A34A" }}>
-                        {formatKsh(paid)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: 12,
-                          color: balance > 0 ? "#DC2626" : "text.secondary",
-                        }}
-                      >
-                        {formatKsh(balance)}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={job.paymentStatus}
-                          size="small"
-                          sx={{
-                            fontSize: 10,
-                            height: 20,
-                            bgcolor:
-                              PAYMENT_STATUS_COLOR[job.paymentStatus] + "22",
-                            color: PAYMENT_STATUS_COLOR[job.paymentStatus],
-                            fontWeight: 600,
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+      {/* Summary row */}
+      <Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap" }}>
+        <Card variant="outlined" sx={{ flex: "1 1 30%", minWidth: 160, borderRadius: 2 }}>
+          <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+            <Typography variant="caption" color="text.secondary">Total Revenue</Typography>
+            <Typography variant="h6" fontWeight={700}>{formatKsh(totals.grandTotal)}</Typography>
+          </CardContent>
+        </Card>
+        <Card variant="outlined" sx={{ flex: "1 1 30%", minWidth: 160, borderRadius: 2 }}>
+          <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+            <Typography variant="caption" color="text.secondary">Collected</Typography>
+            <Typography variant="h6" fontWeight={700} color="#16A34A">{formatKsh(totals.paid)}</Typography>
+          </CardContent>
+        </Card>
+        <Card variant="outlined" sx={{ flex: "1 1 30%", minWidth: 160, borderRadius: 2 }}>
+          <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+            <Typography variant="caption" color="text.secondary">Outstanding</Typography>
+            <Typography variant="h6" fontWeight={700} color="#DC2626">{formatKsh(totals.balance)}</Typography>
+          </CardContent>
+        </Card>
+      </Box>
 
-                {/* Totals row */}
-                <TableRow sx={{ bgcolor: "action.selected" }}>
-                  <TableCell colSpan={5} sx={{ fontWeight: 700, fontSize: 12 }}>
-                    TOTAL ({jobs.length} jobs)
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>
-                    {formatKsh(totals.grandTotal)}
-                  </TableCell>
-                  <TableCell
-                    sx={{ fontWeight: 700, fontSize: 12, color: "#16A34A" }}
-                  >
-                    {formatKsh(totals.paid)}
-                  </TableCell>
-                  <TableCell
-                    sx={{ fontWeight: 700, fontSize: 12, color: "#DC2626" }}
-                  >
-                    {formatKsh(totals.balance)}
-                  </TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Box>
-          <TablePagination
-            component="div"
-            count={jobs.length}
-            page={page}
-            rowsPerPage={rowsPerPage}
-            rowsPerPageOptions={[10]}
-            onPageChange={(_, p) => setPage(p)}
-          />
-        </CardContent>
-      </Card>
+      {/* Sales cards grid */}
+      <Grid container spacing={2}>
+        {jobs.map((job) => (
+          <Grid key={job.id} size={{ xs: 12, sm: 6, md: 4 }}>
+            <SaleCard job={job} />
+          </Grid>
+        ))}
+      </Grid>
     </Box>
   );
 }

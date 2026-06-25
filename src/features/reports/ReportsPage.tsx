@@ -4,10 +4,14 @@ import {
   Button,
   ButtonGroup,
   FormControlLabel,
+  IconButton,
+  Menu,
+  MenuItem,
   Switch,
   Tab,
   Tabs,
 } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import PrintIcon from "@mui/icons-material/Print";
@@ -39,15 +43,12 @@ import { ReportsTechniciansTab } from "./ReportsTechniciansTab";
 import { ReportsCarsTab } from "./ReportsCarsTab";
 import { ReportsOutstandingSection } from "./ReportsOutstandingSection";
 
-// ── Derive KPI card definitions from raw data ──────────────────────────────
-
 function buildKpiCards(
   jobs: ReturnType<typeof filterJobsByPeriod>,
   showComparison: boolean,
 ): KpiCard[] {
   const raw = calcKpis(jobs, INVENTORY_PRODUCTS, FAULT_RECORDS);
 
-  // Mock previous period % changes (would come from API in production)
   const changes = showComparison
     ? {
         totalRevenue: 12.4,
@@ -130,6 +131,7 @@ export function ReportsPage() {
   const [period, setPeriod] = useState<ReportPeriod>("month");
   const [showComparison, setShowComparison] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
 
   const filteredJobs = filterJobsByPeriod(JOBS, period);
 
@@ -137,9 +139,8 @@ export function ReportsPage() {
   const paymentBreakdown = buildPaymentBreakdown(filteredJobs);
   const techStats = buildTechnicianStats(filteredJobs);
   const productStats = buildProductStats(filteredJobs, INVENTORY_PRODUCTS);
-  const outstanding = buildOutstandingPayments(JOBS); // always all-time for this section
+  const outstanding = buildOutstandingPayments(JOBS);
 
-  // Revenue points: use static pre-built array (90 days) for the chart
   const revenuePoints = REVENUE_POINTS;
 
   return (
@@ -148,34 +149,36 @@ export function ReportsPage() {
         title="Reports & Analytics"
         subtitle="Track revenue, inventory, faults, and technician performance"
         action={
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<PictureAsPdfIcon />}
-              sx={{ fontSize: 12 }}
-            >
-              Export PDF
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<TableChartIcon />}
-              sx={{ fontSize: 12 }}
-            >
-              Export CSV
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<PrintIcon />}
-              sx={{ fontSize: 12 }}
-            >
-              Print
-            </Button>
-          </Box>
+          <IconButton size="small" onClick={(e) => setExportAnchor(e.currentTarget)}>
+            <MoreVertIcon />
+          </IconButton>
         }
       />
+
+      <Menu
+        anchorEl={exportAnchor}
+        open={Boolean(exportAnchor)}
+        onClose={() => setExportAnchor(null)}
+      >
+        <MenuItem
+          onClick={() => setExportAnchor(null)}
+          sx={{ gap: 1, fontSize: 13 }}
+        >
+          <PictureAsPdfIcon fontSize="small" /> Export PDF
+        </MenuItem>
+        <MenuItem
+          onClick={() => setExportAnchor(null)}
+          sx={{ gap: 1, fontSize: 13 }}
+        >
+          <TableChartIcon fontSize="small" /> Export CSV
+        </MenuItem>
+        <MenuItem
+          onClick={() => setExportAnchor(null)}
+          sx={{ gap: 1, fontSize: 13 }}
+        >
+          <PrintIcon fontSize="small" /> Print
+        </MenuItem>
+      </Menu>
 
       {/* Period selector + comparison toggle */}
       <Box
@@ -188,7 +191,7 @@ export function ReportsPage() {
           gap: 1,
         }}
       >
-        <ButtonGroup size="small" variant="outlined">
+        <ButtonGroup size="small" variant="outlined" sx={{ flexWrap: "wrap" }}>
           {PERIOD_OPTIONS.map((opt) => (
             <Button
               key={opt.value}
@@ -256,7 +259,7 @@ export function ReportsPage() {
       {activeTab === 4 && <ReportsTechniciansTab techStats={techStats} />}
       {activeTab === 5 && <ReportsCarsTab jobs={filteredJobs} />}
 
-      {/* Outstanding payments — always visible below tabs */}
+      {/* Outstanding payments */}
       <ReportsOutstandingSection outstanding={outstanding} />
     </Box>
   );
