@@ -1,5 +1,6 @@
 import { AddOutlined, DeleteOutlined } from "@mui/icons-material";
 import {
+  Autocomplete,
   Box,
   Button,
   Dialog,
@@ -13,7 +14,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAuthStore } from "../auth/auth.store";
+import { useItemsQuery } from "../inventory/inventory.api";
+import type { InventoryItemResponse } from "../products/products.types";
 import { formatKsh, getInvoiceTotal } from "./invoice.utils";
 import type {
   Invoice,
@@ -23,13 +27,13 @@ import type {
 
 type Props = {
   open: boolean;
-  // When provided, the modal operates in edit mode
   invoice?: Invoice | null;
   onSaved: (invoice: Invoice) => void;
   onClose: () => void;
 };
 
 const EMPTY_LINE: InvoiceLineItem = {
+  productId: "",
   description: "",
   quantity: 1,
   unitPrice: 0,
@@ -37,7 +41,7 @@ const EMPTY_LINE: InvoiceLineItem = {
 
 const EMPTY_FORM: InvoiceFormValues = {
   clientName: "",
-  clientEmail: "",
+  clientPhone: "",
   date: new Date().toISOString().split("T")[0],
   lineItems: [{ ...EMPTY_LINE }],
   notes: "",
@@ -46,7 +50,7 @@ const EMPTY_FORM: InvoiceFormValues = {
 function invoiceToForm(invoice: Invoice): InvoiceFormValues {
   return {
     clientName: invoice.clientName,
-    clientEmail: invoice.clientEmail,
+    clientPhone: invoice.clientPhone,
     date: invoice.date,
     lineItems: invoice.lineItems.map((l) => ({ ...l })),
     notes: invoice.notes,
@@ -56,8 +60,9 @@ function invoiceToForm(invoice: Invoice): InvoiceFormValues {
 export function CreateInvoiceModal({ open, invoice, onSaved, onClose }: Props) {
   const isEditing = Boolean(invoice);
   const [form, setForm] = useState<InvoiceFormValues>(EMPTY_FORM);
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: products = [] } = useItemsQuery(storeId);
 
-  // Pre-populate form when editing an existing invoice
   useEffect(() => {
     if (open) {
       setForm(invoice ? invoiceToForm(invoice) : EMPTY_FORM);
@@ -83,6 +88,20 @@ export function CreateInvoiceModal({ open, invoice, onSaved, onClose }: Props) {
     });
   }
 
+  function handleProductSelect(index: number, product: InventoryItemResponse | null) {
+    if (!product) return;
+    setForm((prev) => {
+      const updated = [...prev.lineItems];
+      updated[index] = {
+        ...updated[index],
+        productId: product.id,
+        description: product.name,
+        unitPrice: Number(product.sellingPrice),
+      };
+      return { ...prev, lineItems: updated };
+    });
+  }
+
   function addLine() {
     setForm((prev) => ({
       ...prev,
@@ -100,7 +119,7 @@ export function CreateInvoiceModal({ open, invoice, onSaved, onClose }: Props) {
   function handleSubmit() {
     const saved: Invoice =
       isEditing && invoice
-        ? { ...invoice, ...form } // preserve id & invoiceNumber
+        ? { ...invoice, ...form }
         : {
             ...form,
             id: `inv-${Date.now()}`,
@@ -121,7 +140,9 @@ export function CreateInvoiceModal({ open, invoice, onSaved, onClose }: Props) {
   const isValid =
     form.clientName.trim() !== "" &&
     form.lineItems.length > 0 &&
-    form.lineItems.every((l) => l.description.trim() !== "" && l.unitPrice > 0);
+    form.lineItems.every(
+      (l) => l.productId !== "" && l.quantity > 0 && l.unitPrice > 0,
+    );
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -141,10 +162,10 @@ export function CreateInvoiceModal({ open, invoice, onSaved, onClose }: Props) {
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
-              label="Client Email"
-              type="email"
-              value={form.clientEmail}
-              onChange={(e) => setField("clientEmail", e.target.value)}
+              label="Client Phone"
+              type="tel"
+              value={form.clientPhone}
+              onChange={(e) => setField("clientPhone", e.target.value)}
               fullWidth
             />
           </Grid>
@@ -161,22 +182,26 @@ export function CreateInvoiceModal({ open, invoice, onSaved, onClose }: Props) {
         </Grid>
 
         <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
-          Line Items
+          Items
         </Typography>
 
         {form.lineItems.map((line, idx) => (
           <Box key={idx} sx={{ mb: 1.5 }}>
             <Grid container spacing={1.5} alignItems="center">
               <Grid size={{ xs: 12, sm: 5 }}>
-                <TextField
-                  label="Description"
-                  value={line.description}
-                  onChange={(e) =>
-                    updateLineItem(idx, "description", e.target.value)
+                <Autocomplete
+                  options={products}
+                  getOptionLabel={(opt) => opt.name}
+                  isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                  value={
+                    products.find((p) => p.id === line.productId) ?? null
                   }
-                  fullWidth
-                  required
+                  onChange={(_, val) => handleProductSelect(idx, val)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Product" size="small" required />
+                  )}
                   size="small"
+                  fullWidth
                 />
               </Grid>
               <Grid size={{ xs: 5, sm: 2 }}>
@@ -207,7 +232,7 @@ export function CreateInvoiceModal({ open, invoice, onSaved, onClose }: Props) {
                 />
               </Grid>
               <Grid size={{ xs: 2, sm: 1 }}>
-                <Tooltip title="Remove line">
+                <Tooltip title="Remove item">
                   <span>
                     <IconButton
                       size="small"
@@ -234,7 +259,7 @@ export function CreateInvoiceModal({ open, invoice, onSaved, onClose }: Props) {
           onClick={addLine}
           sx={{ mt: 0.5 }}
         >
-          Add line
+          Add Item
         </Button>
 
         <Divider sx={{ my: 2 }} />

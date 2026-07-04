@@ -21,7 +21,6 @@ type CardProps = {
   value: string;
   sub?: string;
   icon: React.ReactNode;
-  color: string;
 };
 
 function SummaryCard({ label, value, sub, icon, color }: CardProps) {
@@ -44,10 +43,7 @@ function SummaryCard({ label, value, sub, icon, color }: CardProps) {
       >
         <Box
           sx={{
-            bgcolor: `${color}18`,
-            color,
-            borderRadius: 2,
-            p: 1,
+            color: "text.secondary",
             display: "flex",
             flexShrink: 0,
           }}
@@ -97,33 +93,28 @@ export function StaffSummaryBar({
           label="Total Staff"
           value={total.toString()}
           icon={<GroupOutlined fontSize="small" />}
-          color="#2563EB"
         />
         <SummaryCard
           label="Active Staff"
           value={active.toString()}
           icon={<PersonOutlined fontSize="small" />}
-          color="#16A34A"
         />
         <SummaryCard
           label="On Leave"
           value={onLeave.toString()}
           icon={<PersonOffOutlined fontSize="small" />}
-          color="#D97706"
         />
         <SummaryCard
           label="Top Performer"
           value={topPerformerName}
           sub={`${topPerformerJobs} jobs`}
           icon={<EmojiEventsOutlined fontSize="small" />}
-          color="#9333EA"
         />
         <SummaryCard
           label="Jobs This Month"
           value={totalJobsThisMonth.toString()}
           sub="All staff combined"
           icon={<WorkOutlined fontSize="small" />}
-          color="#0891B2"
         />
       </Box>
     </Box>

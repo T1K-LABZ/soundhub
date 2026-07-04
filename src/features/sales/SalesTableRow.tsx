@@ -160,7 +160,7 @@ export function SalesTableRow({
 
         <TableCell align="right">
           <Typography variant="body2" fontWeight={700}>
-            {formatKsh(job.grandTotal)}
+            {formatKsh(Number(job.grandTotal) || 0)}
           </Typography>
         </TableCell>
 

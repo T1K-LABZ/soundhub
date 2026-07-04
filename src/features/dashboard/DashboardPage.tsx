@@ -27,12 +27,13 @@ import { useAuthStore } from "../auth/auth.store";
 import { DASHBOARD_STATS, RECENT_ACTIVITY } from "./dashboard.data";
 import {
   ACTIVITY_STATUS_COLOR,
+  AVATAR_COLORS,
+  AVATAR_TEXT_COLORS,
   getAvatarInitials,
 } from "./dashboard.constants";
 
-// Icon map — keyed to stat colors since icons are UI-only, not from data
 const STAT_ICONS: Record<string, React.ReactNode> = {
-  "#D42F23": <SpeakerOutlined />,
+  "#F70000": <SpeakerOutlined />,
   "#2563EB": <Inventory2Outlined />,
   "#16A34A": <PointOfSaleOutlined />,
   "#9333EA": <TrendingUpOutlined />,
@@ -48,8 +49,8 @@ export function DashboardPage() {
     <Box>
       {/* Greeting */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h5">
-          Welcome back, {user?.name ?? "Admin"} 👋
+        <Typography variant="h5" fontWeight={700}>
+          Welcome back, {user?.name ?? "Admin"}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Here's what's happening with your store today.
@@ -57,47 +58,35 @@ export function DashboardPage() {
       </Box>
 
       {/* Quick Actions */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Button
-            fullWidth
-            variant="contained"
-            startIcon={<PointOfSaleOutlined />}
-            onClick={() => setOpenModal("sale")}
-            size="large"
-            sx={{ py: 1.5 }}
-          >
-            New Sale
-          </Button>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<SpeakerOutlined />}
-            onClick={() => setOpenModal("product")}
-            size="large"
-            sx={{ py: 1.5 }}
-          >
-            Add Product
-          </Button>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<Inventory2Outlined />}
-            onClick={() => setOpenModal("inventory")}
-            size="large"
-            sx={{ py: 1.5 }}
-          >
-            Check Item
-          </Button>
-        </Grid>
-      </Grid>
+      <Box sx={{ display: "flex", gap: 1.5, mb: 4 }}>
+        <Button
+          variant="contained"
+          startIcon={<PointOfSaleOutlined />}
+          onClick={() => setOpenModal("sale")}
+          sx={{ px: 3, py: 1 }}
+        >
+          New Sale
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<SpeakerOutlined />}
+          onClick={() => setOpenModal("product")}
+          sx={{ px: 3, py: 1 }}
+        >
+          Add Product
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<Inventory2Outlined />}
+          onClick={() => setOpenModal("inventory")}
+          sx={{ px: 3, py: 1 }}
+        >
+          Check Item
+        </Button>
+      </Box>
 
       {/* Stat cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={2.5} sx={{ mb: 4 }}>
         {DASHBOARD_STATS.map((stat) => (
           <Grid key={stat.label} size={{ xs: 12, sm: 6, lg: 3 }}>
             <StatCard
@@ -111,21 +100,25 @@ export function DashboardPage() {
       </Grid>
 
       {/* Recent Activity */}
-      <Paper sx={{ p: 3 }}>
+      <Paper
+        elevation={0}
+        sx={{ border: "1px solid", borderColor: "divider", p: 3 }}
+      >
         <Typography variant="h6" sx={{ mb: 2 }}>
           Recent Activity
         </Typography>
         <List disablePadding>
           {RECENT_ACTIVITY.map((item, idx) => (
             <Box key={item.id}>
-              <ListItem disablePadding sx={{ py: 1 }}>
+              <ListItem disablePadding sx={{ py: 1.5 }}>
                 <ListItemAvatar>
                   <Avatar
                     sx={{
-                      bgcolor: "primary.main",
-                      width: 36,
-                      height: 36,
+                      bgcolor: AVATAR_COLORS[item.action],
+                      color: AVATAR_TEXT_COLORS[item.action],
                       fontSize: 13,
+                      height: 36,
+                      width: 36,
                     }}
                   >
                     {getAvatarInitials(item.product)}
@@ -136,26 +129,24 @@ export function DashboardPage() {
                   secondary={item.time}
                   slotProps={{
                     primary: {
-                      style: { fontWeight: 500, fontSize: "0.875rem" },
+                      style: { fontSize: "0.875rem", fontWeight: 500 },
                     },
                     secondary: { style: { fontSize: "0.75rem" } },
                   }}
                 />
                 <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                    gap: 0.5,
-                  }}
+                  sx={{ alignItems: "center", display: "flex", gap: 1.5 }}
                 >
                   <Chip
-                    label={item.action}
                     color={ACTIVITY_STATUS_COLOR[item.action]}
+                    label={item.action}
                     size="small"
-                    variant="outlined"
                   />
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ minWidth: 60, textAlign: "right" }}
+                  >
                     {item.amount}
                   </Typography>
                 </Box>

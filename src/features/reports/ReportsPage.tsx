@@ -16,7 +16,8 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import PrintIcon from "@mui/icons-material/Print";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { JOBS } from "../sales/sales.data";
+import { useAuthStore } from "../auth/auth.store";
+import { useJobsQuery } from "../sales/sales.api";
 import {
   INVENTORY_PRODUCTS,
   STOCK_MOVEMENTS,
@@ -128,31 +129,32 @@ function buildKpiCards(
 }
 
 export function ReportsPage() {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: allJobs = [] } = useJobsQuery(storeId);
   const [period, setPeriod] = useState<ReportPeriod>("month");
   const [showComparison, setShowComparison] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [exportAnchor, setExportAnchor] = useState<null | HTMLElement>(null);
 
-  const filteredJobs = filterJobsByPeriod(JOBS, period);
+  const filteredJobs = filterJobsByPeriod(allJobs, period);
 
   const kpiCards = buildKpiCards(filteredJobs, showComparison);
   const paymentBreakdown = buildPaymentBreakdown(filteredJobs);
   const techStats = buildTechnicianStats(filteredJobs);
   const productStats = buildProductStats(filteredJobs, INVENTORY_PRODUCTS);
-  const outstanding = buildOutstandingPayments(JOBS);
+  const outstanding = buildOutstandingPayments(allJobs);
 
   const revenuePoints = REVENUE_POINTS;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <PageHeader
-        title="Reports & Analytics"
         subtitle="Track revenue, inventory, faults, and technician performance"
-        action={
+        action={(
           <IconButton size="small" onClick={(e) => setExportAnchor(e.currentTarget)}>
             <MoreVertIcon />
           </IconButton>
-        }
+        )}
       />
 
       <Menu

@@ -1,6 +1,5 @@
 import type { ActivityStatus } from "./dashboard.types";
 
-// UI-only map — will never come from the API
 export const ACTIVITY_STATUS_COLOR: Record<
   ActivityStatus,
   "success" | "error" | "warning"
@@ -10,11 +9,16 @@ export const ACTIVITY_STATUS_COLOR: Record<
   "Low Stock": "warning",
 };
 
-export const STAT_ICONS: Record<string, string> = {
-  "Total Products": "speaker",
-  "Items in Stock": "inventory",
-  "Today's Sales": "pos",
-  "Monthly Revenue": "trending",
+export const AVATAR_COLORS: Record<ActivityStatus, string> = {
+  Sale: "rgba(22, 163, 74, 0.1)",
+  Restock: "rgba(247, 0, 0, 0.06)",
+  "Low Stock": "rgba(234, 179, 8, 0.1)",
+};
+
+export const AVATAR_TEXT_COLORS: Record<ActivityStatus, string> = {
+  Sale: "#16A34A",
+  Restock: "#F70000",
+  "Low Stock": "#EAB308",
 };
 
 export function getAvatarInitials(name: string): string {

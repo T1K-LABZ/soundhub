@@ -3,6 +3,7 @@ export type CreateProductPayload = {
   storeId: string;
   name: string;
   category: string;
+  description: string;
   serial: string;
   barcode: string;
   buyingPrice: number;
@@ -10,10 +11,9 @@ export type CreateProductPayload = {
   startingStock: number;
   lowStockThreshold: number;
   createdDate: string; // ISO string
-  photoUrl: string; // ImageKit URL — handled separately
+  photoUrl: string;
 };
 
-// serial is excluded from the form — barcode value is used for both at submit time
 export type ProductFormValues = Omit<
   CreateProductPayload,
   "storeId" | "photoUrl" | "serial"
@@ -23,6 +23,7 @@ export type ProductFormValues = Omit<
 export type Product = {
   id: string;
   name: string;
+  description: string;
   category: string;
   barcode: string;
   buyingPrice: number;
@@ -30,12 +31,58 @@ export type Product = {
   stockQuantity: number;
   lowStockThreshold: number;
   photoUrl: string;
+  expiryDate: string;
   createdDate: string;
+};
+
+// Response from GET /inventory/products/:productId
+export type ProductDetail = {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string;
+  category: string;
+  barcode: string;
+  photoUrl: string;
+  expiryDate: string;
+  itemsInStock: number;
+  lowStockThreshold: number;
+  sellingPrice: number;
+  costPrice: number;
+  createdAt: string;
+  updatedAt: string;
+  categoryRef?: { id: string; name: string };
+};
+
+// Response from GET /inventory/items
+export type InventoryItemResponse = {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string;
+  category: string;
+  barcode: string;
+  photoUrl: string;
+  expiryDate: string;
+  itemsInStock: number;
+  lowStockThreshold: number;
+  sellingPrice: number;
+  costPrice: number;
+  createdAt: string;
+  updatedAt: string;
+  categoryRef?: { id: string; name: string };
 };
 
 export type Category = {
   id: string;
   name: string;
+};
+
+export type CategoryApiResponse = {
+  id: string;
+  name: string;
+  createdAt: string;
+  _count?: { products: number };
 };
 
 export type AvailabilityFilter =

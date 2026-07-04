@@ -2,7 +2,6 @@ import {
   EditOutlined,
   ExpandLessOutlined,
   ExpandMoreOutlined,
-  PrintOutlined,
   VisibilityOutlined,
 } from "@mui/icons-material";
 import {
@@ -29,7 +28,6 @@ type Props = {
   onToggle: () => void;
   onView: () => void;
   onEdit: () => void;
-  onPrint: () => void;
 };
 
 function StatusChip({ label, color }: { label: string; color: string }) {
@@ -55,7 +53,6 @@ export function SalesJobCard({
   onToggle,
   onView,
   onEdit,
-  onPrint,
 }: Props) {
   return (
     <Card
@@ -87,7 +84,7 @@ export function SalesJobCard({
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <Typography variant="subtitle1" fontWeight={700} color="primary">
-              {formatKsh(job.grandTotal)}
+              {formatKsh(Number(job.grandTotal) || 0)}
             </Typography>
             {expanded ? (
               <ExpandLessOutlined fontSize="small" color="action" />
@@ -146,11 +143,6 @@ export function SalesJobCard({
           <Tooltip title="Edit">
             <IconButton size="small" onClick={onEdit}>
               <EditOutlined fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Print">
-            <IconButton size="small" onClick={onPrint}>
-              <PrintOutlined fontSize="small" />
             </IconButton>
           </Tooltip>
         </Box>

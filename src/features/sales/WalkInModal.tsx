@@ -14,26 +14,29 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { INVENTORY_PRODUCTS } from "../inventory/inventory.data";
+import { useAuthStore } from "../auth/auth.store";
+import { useItemsQuery } from "../inventory/inventory.api";
+import { useCreateCounterSale } from "./sales.api";
+import { useStaffListQuery } from "../staff/staff.api";
 import type { JobProduct, PaymentMethod, PaymentStatus } from "./sales.types";
 import { formatKsh } from "./sales.utils";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave?: (data: WalkInData) => void;
 };
 
-type WalkInData = {
+type WalkInForm = {
   customerName: string;
   customerPhone: string;
   products: JobProduct[];
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
+  paymentReference: string;
   servedBy: string;
+  notes: string;
 };
 
-const STAFF = ["Brian", "Kevin", "James", "Mercy"];
 const PAYMENT_METHODS: PaymentMethod[] = [
   "Cash",
   "Mpesa",
@@ -42,30 +45,41 @@ const PAYMENT_METHODS: PaymentMethod[] = [
 ];
 const PAYMENT_STATUSES: PaymentStatus[] = ["Paid", "Unpaid", "Deposit Made"];
 
-const INIT: WalkInData = {
+const INIT: WalkInForm = {
   customerName: "",
   customerPhone: "",
   products: [],
   paymentStatus: "Paid",
   paymentMethod: "Cash",
+  paymentReference: "",
   servedBy: "",
+  notes: "",
 };
 
-export function WalkInModal({ open, onClose, onSave }: Props) {
-  const [form, setForm] = useState<WalkInData>(INIT);
+export function WalkInModal({ open, onClose }: Props) {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: apiProducts = [] } = useItemsQuery(storeId);
+  const { data: staffList = [] } = useStaffListQuery(storeId);
+  const createSale = useCreateCounterSale();
 
-  function set<K extends keyof WalkInData>(key: K, value: WalkInData[K]) {
+  const [form, setForm] = useState<WalkInForm>(INIT);
+
+  function set<K extends keyof WalkInForm>(key: K, value: WalkInForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  // ── Products ──────────────────────────────────────────────────────────────
+
   function addProduct() {
-    const first = INVENTORY_PRODUCTS[0];
+    if (apiProducts.length === 0) return;
+    const first = apiProducts[0];
+    const price = Number(first.sellingPrice) || 0;
     const line: JobProduct = {
-      productId: first.productId,
-      productName: first.productName,
+      productId: first.id,
+      productName: first.name,
       quantity: 1,
-      unitPrice: first.sellingPrice,
-      lineTotal: first.sellingPrice,
+      unitPrice: price,
+      lineTotal: price,
     };
     set("products", [...form.products, line]);
   }
@@ -79,13 +93,13 @@ export function WalkInModal({ open, onClose, onSave }: Props) {
       if (i !== idx) return p;
       const next = { ...p, [field]: value };
       if (field === "productId") {
-        const found = INVENTORY_PRODUCTS.find((ip) => ip.productId === value);
+        const found = apiProducts.find((ip) => ip.id === value);
         if (found) {
-          next.productName = found.productName;
-          next.unitPrice = found.sellingPrice;
+          next.productName = found.name;
+          next.unitPrice = Number(found.sellingPrice) || 0;
         }
       }
-      next.lineTotal = next.quantity * next.unitPrice;
+      next.lineTotal = Number(next.quantity) * Number(next.unitPrice);
       return next;
     });
     set("products", updated);
@@ -98,16 +112,43 @@ export function WalkInModal({ open, onClose, onSave }: Props) {
     );
   }
 
-  const total = form.products.reduce((s, p) => s + p.lineTotal, 0);
+  const total = form.products.reduce(
+    (s, p) => s + Number(p.lineTotal),
+    0,
+  );
+
+  // ── Save ──────────────────────────────────────────────────────────────────
 
   function handleClose() {
     setForm(INIT);
     onClose();
   }
 
-  function handleSave() {
-    onSave?.(form);
-    handleClose();
+  async function handleSave() {
+    if (!storeId) return;
+    createSale.mutate(
+      {
+        storeId,
+        customerName: form.customerName,
+        customerPhone: form.customerPhone,
+        products: form.products.map((p) => ({
+          productId: p.productId,
+          productName: p.productName,
+          quantity: p.quantity,
+          unitPrice: p.unitPrice,
+          lineTotal: p.lineTotal,
+        })),
+        totalAmount: total,
+        paymentMethod: form.paymentMethod,
+        paymentStatus: form.paymentStatus,
+        paymentReference: form.paymentReference || undefined,
+        servedBy: form.servedBy,
+        notes: form.notes || undefined,
+      },
+      {
+        onSuccess: () => handleClose(),
+      },
+    );
   }
 
   return (
@@ -163,9 +204,9 @@ export function WalkInModal({ open, onClose, onSave }: Props) {
                   updateProduct(idx, "productId", e.target.value)
                 }
               >
-                {INVENTORY_PRODUCTS.map((ip) => (
-                  <MenuItem key={ip.productId} value={ip.productId}>
-                    {ip.productName}
+                {apiProducts.map((ip) => (
+                  <MenuItem key={ip.id} value={ip.id}>
+                    {ip.name}
                   </MenuItem>
                 ))}
               </TextField>
@@ -185,7 +226,7 @@ export function WalkInModal({ open, onClose, onSave }: Props) {
             </Grid>
             <Grid size={{ xs: 4, sm: 3 }}>
               <Typography variant="body2" fontWeight={600}>
-                {formatKsh(p.lineTotal)}
+                {formatKsh(Number(p.lineTotal) || 0)}
               </Typography>
             </Grid>
             <Grid size={{ xs: 2, sm: 1 }}>
@@ -273,12 +314,32 @@ export function WalkInModal({ open, onClose, onSave }: Props) {
               onChange={(e) => set("servedBy", e.target.value)}
               required
             >
-              {STAFF.map((s) => (
-                <MenuItem key={s} value={s}>
-                  {s}
+              {staffList.map((s) => (
+                <MenuItem key={s.id} value={s.user.fullName}>
+                  {s.user.fullName}
                 </MenuItem>
               ))}
             </TextField>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Payment Reference (optional)"
+              fullWidth
+              size="small"
+              value={form.paymentReference}
+              onChange={(e) => set("paymentReference", e.target.value)}
+              placeholder="Mpesa ref, cheque no, etc."
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Notes (optional)"
+              fullWidth
+              size="small"
+              value={form.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              placeholder="Any additional notes"
+            />
           </Grid>
         </Grid>
       </DialogContent>
@@ -289,7 +350,7 @@ export function WalkInModal({ open, onClose, onSave }: Props) {
           variant="contained"
           onClick={handleSave}
           disabled={
-            !form.customerName || form.products.length === 0 || !form.servedBy
+            !form.customerName || form.products.length === 0 || !form.servedBy || createSale.isPending
           }
         >
           Save

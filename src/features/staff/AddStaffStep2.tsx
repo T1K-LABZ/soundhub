@@ -1,5 +1,6 @@
 import {
   Checkbox,
+  CircularProgress,
   FormControlLabel,
   Grid,
   MenuItem,
@@ -9,17 +10,27 @@ import {
 import {
   EMPLOYMENT_TYPES,
   SPECIALIZATIONS,
-  STAFF_ROLES,
   STAFF_STATUSES,
 } from "./staff.constants";
-import type { AddStaffForm, Specialization } from "./staff.types";
+import type {
+  AddStaffForm,
+  AssignableRole,
+  Specialization,
+} from "./staff.types";
 
 type Props = {
   form: AddStaffForm;
   onChange: <K extends keyof AddStaffForm>(k: K, v: AddStaffForm[K]) => void;
+  roles: AssignableRole[];
+  loadingRoles: boolean;
 };
 
-export function AddStaffStep2({ form, onChange }: Props) {
+export function AddStaffStep2({
+  form,
+  onChange,
+  roles,
+  loadingRoles,
+}: Props) {
   function toggleSpec(spec: Specialization) {
     const current = form.specializations;
     const updated = current.includes(spec)
@@ -35,15 +46,21 @@ export function AddStaffStep2({ form, onChange }: Props) {
           select
           label="Role"
           value={form.role}
-          onChange={(e) =>
-            onChange("role", e.target.value as AddStaffForm["role"])
-          }
+          onChange={(e) => onChange("role", e.target.value)}
           fullWidth
           required
+          disabled={loadingRoles}
+          slotProps={{
+            input: {
+              endAdornment: loadingRoles ? (
+                <CircularProgress size={18} />
+              ) : null,
+            },
+          }}
         >
-          {STAFF_ROLES.map((r) => (
-            <MenuItem key={r} value={r}>
-              {r}
+          {roles.map((r) => (
+            <MenuItem key={r.id} value={r.name}>
+              {r.name}
             </MenuItem>
           ))}
         </TextField>

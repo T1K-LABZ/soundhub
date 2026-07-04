@@ -8,7 +8,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { TECHNICIANS } from "./sales.constants";
+import { useAuthStore } from "../auth/auth.store";
+import { useStaffListQuery } from "../staff/staff.api";
 import type { DifficultyRating, JobStatus } from "./sales.types";
 import { DIFFICULTY_COLOR, JOB_STATUS_COLOR } from "./sales.constants";
 
@@ -38,6 +39,9 @@ type Props = {
 };
 
 export function NewSaleStep4({ data, onChange }: Props) {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: staffList = [] } = useStaffListQuery(storeId);
+
   function set<K extends keyof Step4Data>(key: K, value: Step4Data[K]) {
     onChange({ ...data, [key]: value });
   }
@@ -56,9 +60,9 @@ export function NewSaleStep4({ data, onChange }: Props) {
             onChange={(e) => set("technicianName", e.target.value)}
             required
           >
-            {TECHNICIANS.filter((t) => t !== "All").map((t) => (
-              <MenuItem key={t} value={t}>
-                {t}
+            {staffList.map((s) => (
+              <MenuItem key={s.id} value={s.user.fullName}>
+                {s.user.fullName}
               </MenuItem>
             ))}
           </TextField>

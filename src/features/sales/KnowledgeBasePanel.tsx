@@ -17,7 +17,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { JOBS } from "./sales.data";
+import { useAuthStore } from "../auth/auth.store";
+import { useJobsQuery } from "./sales.api";
 import { DIFFICULTY_COLOR } from "./sales.constants";
 import type { Job } from "./sales.types";
 import { formatJobDate } from "./sales.utils";
@@ -37,13 +38,15 @@ const COMPLEXITY_RANK: Record<string, number> = {
 };
 
 export function KnowledgeBasePanel() {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: allJobs = [] } = useJobsQuery(storeId);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortMode>("recent");
 
   const q = search.toLowerCase();
 
-  const filtered: Job[] = JOBS.filter((j) => {
+  const filtered: Job[] = allJobs.filter((j) => {
     if (!q) return true;
     const target = [j.carMake, j.carModel, j.carVariant, j.serviceType]
       .join(" ")

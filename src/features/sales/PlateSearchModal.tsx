@@ -13,7 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { JOBS } from "./sales.data";
+import { useAuthStore } from "../auth/auth.store";
+import { useJobsQuery } from "./sales.api";
 import { JOB_STATUS_COLOR, PAYMENT_STATUS_COLOR } from "./sales.constants";
 import type { Job } from "./sales.types";
 import { formatJobDate, formatKsh } from "./sales.utils";
@@ -25,6 +26,8 @@ type Props = {
 };
 
 export function PlateSearchModal({ open, onClose }: Props) {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: allJobs = [] } = useJobsQuery(storeId);
   const [query, setQuery] = useState("");
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
@@ -32,7 +35,7 @@ export function PlateSearchModal({ open, onClose }: Props) {
 
   // All jobs matching the plate
   const matchedJobs = cleanQuery
-    ? JOBS.filter((j) => j.carPlate.toUpperCase().includes(cleanQuery))
+    ? allJobs.filter((j) => j.carPlate.toUpperCase().includes(cleanQuery))
     : [];
 
   // Aggregate car summary from matched jobs
@@ -43,7 +46,7 @@ export function PlateSearchModal({ open, onClose }: Props) {
           model: matchedJobs[0].carModel,
           variant: matchedJobs[0].carVariant,
           year: matchedJobs[0].carYear,
-          totalSpent: matchedJobs.reduce((s, j) => s + j.grandTotal, 0),
+          totalSpent: matchedJobs.reduce((s, j) => s + (Number(j.grandTotal) || 0), 0),
           visits: matchedJobs.length,
         }
       : null;

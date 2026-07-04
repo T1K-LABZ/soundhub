@@ -55,7 +55,7 @@ export function downloadInvoicePdf(invoice: Invoice): void {
   doc.text(invoice.clientName, 14, 49);
   doc.setFontSize(9);
   doc.setTextColor(100);
-  doc.text(invoice.clientEmail, 14, 55);
+  doc.text(invoice.clientPhone, 14, 55);
   doc.setFontSize(11);
   doc.setTextColor(31, 41, 51);
   doc.text(invoice.date, pageWidth - 60, 49);

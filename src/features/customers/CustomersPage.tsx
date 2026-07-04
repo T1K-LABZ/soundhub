@@ -96,44 +96,43 @@ export function CustomersPage() {
   return (
     <Box>
       <PageHeader
-        title="Customer Management"
         subtitle="Track customers, loyalty and send offers"
-        action={
+        action={(
           <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddOutlined />}
-              onClick={() => {
-                setEditTarget(null);
-                setAddOpen(true);
-              }}
-              sx={{ whiteSpace: "nowrap" }}
-            >
-              Add Customer
-            </Button>
-            <IconButton
-              onClick={(e) => setMoreAnchor(e.currentTarget)}
-              size="small"
-            >
-              <MoreVertOutlined />
-            </IconButton>
-            <Menu
-              anchorEl={moreAnchor}
-              open={Boolean(moreAnchor)}
-              onClose={() => setMoreAnchor(null)}
-            >
-              <MenuItem onClick={() => { setBulkOfferOpen(true); setMoreAnchor(null); }}>
-                <ListItemIcon><CampaignOutlined fontSize="small" /></ListItemIcon>
-                <ListItemText>Send Campaign</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => setMoreAnchor(null)}>
-                <ListItemIcon><DownloadOutlined fontSize="small" /></ListItemIcon>
-                <ListItemText>Export List</ListItemText>
-              </MenuItem>
-            </Menu>
-          </Box>
-        }
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddOutlined />}
+            onClick={() => {
+              setEditTarget(null);
+              setAddOpen(true);
+            }}
+            sx={{ whiteSpace: "nowrap" }}
+          >
+            Add Customer
+          </Button>
+          <IconButton
+            onClick={(e) => setMoreAnchor(e.currentTarget)}
+            size="small"
+          >
+            <MoreVertOutlined />
+          </IconButton>
+          <Menu
+            anchorEl={moreAnchor}
+            open={Boolean(moreAnchor)}
+            onClose={() => setMoreAnchor(null)}
+          >
+            <MenuItem onClick={() => { setBulkOfferOpen(true); setMoreAnchor(null); }}>
+              <ListItemIcon><CampaignOutlined fontSize="small" /></ListItemIcon>
+              <ListItemText>Send Campaign</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => setMoreAnchor(null)}>
+              <ListItemIcon><DownloadOutlined fontSize="small" /></ListItemIcon>
+              <ListItemText>Export List</ListItemText>
+            </MenuItem>
+          </Menu>
+        </Box>
+        )}
       />
 
       <CustomerSummaryBar summary={summary} />

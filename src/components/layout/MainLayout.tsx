@@ -4,32 +4,52 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
-const DRAWER_WIDTH = 260;
+const EXPANDED_WIDTH = 260;
+const COLLAPSED_WIDTH = 72;
+const SIDEBAR_KEY = "sidebarCollapsed";
+
+function loadCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 
 export function MainLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(loadCollapsed);
+
+  function handleToggle() {
+    setCollapsed((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem(SIDEBAR_KEY, String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }
+
+  const drawerWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      {/*
-        Sidebar renders:
-        - a <Box component="nav"> that is 0px wide on mobile, 260px wide on desktop
-          — this reserves space in the flex row for the permanent drawer
-        - a temporary Drawer (mobile) + permanent Drawer (desktop) inside it
-      */}
       <Sidebar
-        drawerWidth={DRAWER_WIDTH}
+        collapsed={collapsed}
+        drawerWidth={drawerWidth}
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
+        onToggle={handleToggle}
       />
 
-      {/* Content column — naturally fills the remaining flex space */}
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Topbar
-          drawerWidth={DRAWER_WIDTH}
+          drawerWidth={drawerWidth}
           onMenuClick={() => setMobileOpen((v) => !v)}
         />
-        <Box component="main" sx={{ p: 3, mt: 8 }}>
+        <Box component="main" sx={{ px: 3, py: 2, mt: 7 }}>
           <Outlet />
         </Box>
       </Box>

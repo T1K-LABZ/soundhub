@@ -1,7 +1,7 @@
-import { CategoryOutlined, SearchOutlined } from "@mui/icons-material";
+import { SearchOutlined } from "@mui/icons-material";
 import {
   Box,
-  Button,
+  CircularProgress,
   Grid,
   InputAdornment,
   MenuItem,
@@ -10,19 +10,20 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useAuthStore } from "../auth/auth.store";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { AddProductModal } from "./AddProductModal";
-import { CategoryModal } from "./CategoryModal";
 import { ProductCard } from "./ProductCard";
 import { AVAILABILITY_OPTIONS, PRICE_RANGES } from "./products.constants";
-import { MOCK_CATEGORIES, MOCK_PRODUCTS } from "./products.data";
 import type { AvailabilityFilter, Category, Product } from "./products.types";
+import { getItems, getCategories, mapItemToProduct } from "./products.api";
 import { filterProducts } from "./products.utils";
 
 export function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const storeId = useAuthStore((s) => s.user?.storeId);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Filter state
   const [search, setSearch] = useState("");
@@ -31,10 +32,38 @@ export function ProductsPage() {
   const [priceRangeIdx, setPriceRangeIdx] = useState(0);
 
   // Modal state
-  const [addProductOpen, setAddProductOpen] = useState(false);
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-
   const selectedRange = PRICE_RANGES[priceRangeIdx];
+
+  const fetchProducts = useCallback(async () => {
+    if (!storeId) return;
+    setLoading(true);
+    try {
+      const { data } = await getItems(storeId, search ? { search } : undefined);
+      setProducts(data.map(mapItemToProduct));
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [storeId, search]);
+
+  const fetchCategories = useCallback(async () => {
+    if (!storeId) return;
+    try {
+      const { data } = await getCategories(storeId);
+      setCategories(data.map((c) => ({ id: c.id, name: c.name })));
+    } catch {
+      // ignore
+    }
+  }, [storeId]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const filtered = filterProducts(products, {
     search,
@@ -44,44 +73,14 @@ export function ProductsPage() {
     priceMax: selectedRange.max,
   });
 
-  function handleAddCategory(cat: Category) {
-    setCategories((prev) => [...prev, cat]);
-  }
-
-  function handleDeleteCategory(id: string) {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
-  }
-
-  function handleProductClick(_product: Product) {
-    // TODO: open product detail / edit modal
-  }
-
   return (
     <Box>
-      <PageHeader
-        title="Products"
-        subtitle={`${products.length} products across ${categories.length} categories`}
-        action={
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<CategoryOutlined />}
-              onClick={() => setCategoryModalOpen(true)}
-            >
-              Categories
-            </Button>
-            <Button variant="contained" onClick={() => setAddProductOpen(true)}>
-              Add Product
-            </Button>
-          </Box>
-        }
-      />
+      <PageHeader subtitle="Browse your product catalog" />
 
       {/* ── Filters ────────────────────────────────────────────────────────── */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
-        {/* Search */}
         <TextField
-          placeholder="Search products…"
+          placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           size="small"
@@ -97,7 +96,6 @@ export function ProductsPage() {
           }}
         />
 
-        {/* Category filter */}
         <TextField
           select
           label="Category"
@@ -114,7 +112,6 @@ export function ProductsPage() {
           ))}
         </TextField>
 
-        {/* Price range filter */}
         <TextField
           select
           label="Price Range"
@@ -130,7 +127,6 @@ export function ProductsPage() {
           ))}
         </TextField>
 
-        {/* Availability toggle */}
         <ToggleButtonGroup
           value={availability}
           exclusive
@@ -146,7 +142,11 @@ export function ProductsPage() {
       </Box>
 
       {/* ── Product grid ───────────────────────────────────────────────────── */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : filtered.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 8 }}>
           <Typography variant="body1" color="text.secondary">
             No products match your filters
@@ -156,24 +156,11 @@ export function ProductsPage() {
         <Grid container spacing={3}>
           {filtered.map((product) => (
             <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <ProductCard product={product} onClick={handleProductClick} />
+              <ProductCard product={product} onClick={() => {}} />
             </Grid>
           ))}
         </Grid>
       )}
-
-      <AddProductModal
-        open={addProductOpen}
-        onClose={() => setAddProductOpen(false)}
-      />
-
-      <CategoryModal
-        open={categoryModalOpen}
-        categories={categories}
-        onAdd={handleAddCategory}
-        onDelete={handleDeleteCategory}
-        onClose={() => setCategoryModalOpen(false)}
-      />
     </Box>
   );
 }

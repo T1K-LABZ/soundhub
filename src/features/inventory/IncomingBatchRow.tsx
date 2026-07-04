@@ -1,5 +1,6 @@
 import { DeleteOutlined, QrCodeScannerOutlined } from "@mui/icons-material";
 import {
+  Alert,
   Box,
   IconButton,
   MenuItem,
@@ -7,12 +8,12 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import type { CreateIncomingBatchItem, InventoryProduct } from "./inventory.types";
+import type { InventoryItemResponse } from "../products/products.types";
 
 type Props = {
   item: CreateIncomingBatchItem;
   index: number;
-  products: InventoryProduct[];
+  products: InventoryItemResponse[];
   canRemove: boolean;
   onScanClick: (itemId: string) => void;
   onChange: (updated: CreateIncomingBatchItem) => void;
@@ -36,11 +37,11 @@ export function IncomingBatchRow({
   }
 
   function handleProductChange(productId: string) {
-    const product = products.find((p) => p.productId === productId);
+    const product = products.find((p) => p.id === productId);
     onChange({
       ...item,
       productId,
-      buyingPrice: product?.buyingPrice ?? 0,
+      buyingPrice: product?.costPrice ?? 0,
       sellingPrice: product?.sellingPrice ?? 0,
     });
   }
@@ -109,13 +110,13 @@ export function IncomingBatchRow({
         }}
       >
         {products.map((p) => (
-          <MenuItem key={p.productId} value={p.productId}>
-            {p.productName} ({p.serial})
+          <MenuItem key={p.id} value={p.id}>
+            {p.name} ({p.barcode || p.id})
           </MenuItem>
         ))}
       </TextField>
 
-      {/* Qty + prices on one row */}
+      {/* Qty + status + prices on one row */}
       <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
         <TextField
           label="Qty"
@@ -127,6 +128,23 @@ export function IncomingBatchRow({
           sx={{ flex: "1 1 70px", minWidth: 70 }}
           slotProps={{ htmlInput: { min: 1 } }}
         />
+        <TextField
+          select
+          label="Status"
+          value={item.status}
+          onChange={(e) => set("status", e.target.value as "IN_TRANSIT" | "PENDING" | "ACTIVE")}
+          size="small"
+          sx={{ flex: "1 1 110px", minWidth: 110 }}
+        >
+          <MenuItem value="IN_TRANSIT">In Transit</MenuItem>
+          <MenuItem value="PENDING">Pending</MenuItem>
+          <MenuItem value="ACTIVE">Active</MenuItem>
+        </TextField>
+        {item.status === "ACTIVE" && (
+          <Alert severity="info" sx={{ flex: "1 1 100%", py: 0 }}>
+            Activating this batch will apply the prices above as the default product prices.
+          </Alert>
+        )}
         <TextField
           label="Buying Price (KSh)"
           type="number"

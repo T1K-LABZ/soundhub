@@ -1,16 +1,7 @@
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Step,
-  StepLabel,
-  Stepper,
-} from "@mui/material";
-import { useState } from "react";
-import { JOBS } from "./sales.data";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Step, StepLabel, Stepper } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useAuthStore } from "../auth/auth.store";
+import { useCreateJob, useUpdateJob } from "./sales.api";
 import type { Job } from "./sales.types";
 import { NewSaleStep1, type Step1Data } from "./NewSaleStep1";
 import { NewSaleStep2, type Step2Data } from "./NewSaleStep2";
@@ -63,25 +54,89 @@ const INIT_STEP4: Step4Data = {
   followUpNotes: "",
 };
 
+function jobToStep1(job: Job): Step1Data {
+  return {
+    customerName: job.customerName,
+    customerPhone: job.customerPhone,
+    customerEmail: job.customerEmail || "",
+    carPlate: job.carPlate,
+    carMake: job.carMake,
+    carModel: job.carModel,
+    carVariant: job.carVariant,
+    carYear: String(job.carYear),
+  };
+}
+
+function jobToStep2(job: Job): Step2Data {
+  return {
+    serviceType: job.serviceType,
+    services: job.services,
+    products: job.products,
+    discount: job.discount,
+  };
+}
+
+function jobToStep3(job: Job): Step3Data {
+  return {
+    paymentStatus: job.paymentStatus,
+    depositAmount: job.depositAmount ? String(job.depositAmount) : "",
+    paymentMethod: job.paymentMethod,
+    mpesaRef: job.mpesaRef || "",
+    paymentDate: job.paymentDate?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+  };
+}
+
+function jobToStep4(job: Job): Step4Data {
+  return {
+    technicianName: job.technicianName,
+    jobStatus: job.jobStatus,
+    installationNotes: job.installationNotes,
+    issuesEncountered: job.issuesEncountered || "",
+    issuesResolution: job.issuesResolution || "",
+    difficultyRating: job.difficultyRating,
+    followUpNeeded: job.followUpNeeded,
+    followUpNotes: job.followUpNotes || "",
+  };
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSave?: (job: Partial<Job>) => void;
+  job?: Job | null;
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function NewSaleModal({ open, onClose, onSave }: Props) {
+export function NewSaleModal({ open, onClose, job }: Props) {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const createJob = useCreateJob();
+  const updateJob = useUpdateJob();
+  const isEditing = !!job;
+
   const [step, setStep] = useState(0);
   const [step1, setStep1] = useState<Step1Data>(INIT_STEP1);
   const [step2, setStep2] = useState<Step2Data>(INIT_STEP2);
   const [step3, setStep3] = useState<Step3Data>(INIT_STEP3);
   const [step4, setStep4] = useState<Step4Data>(INIT_STEP4);
 
+  useEffect(() => {
+    if (job) {
+      setStep1(jobToStep1(job));
+      setStep2(jobToStep2(job));
+      setStep3(jobToStep3(job));
+      setStep4(jobToStep4(job));
+    } else {
+      setStep1(INIT_STEP1);
+      setStep2(INIT_STEP2);
+      setStep3(INIT_STEP3);
+      setStep4(INIT_STEP4);
+    }
+    setStep(0);
+  }, [job, open]);
+
   function handleClose() {
-    // Reset form on close
     setStep(0);
     setStep1(INIT_STEP1);
     setStep2(INIT_STEP2);
@@ -90,21 +145,21 @@ export function NewSaleModal({ open, onClose, onSave }: Props) {
     onClose();
   }
 
-  const productsSubtotal = step2.products.reduce((s, p) => s + p.lineTotal, 0);
+  const productsSubtotal = step2.products.reduce((s, p) => s + Number(p.lineTotal), 0);
   const servicesSubtotal = step2.services.reduce(
-    (s, svc) => s + svc.basePrice,
+    (s, svc) => s + Number(svc.basePrice),
     0,
   );
+  const discount = Number(step2.discount) || 0;
   const grandTotal = Math.max(
     0,
-    productsSubtotal + servicesSubtotal - step2.discount,
+    productsSubtotal + servicesSubtotal - discount,
   );
 
-  function buildJob(): Partial<Job> {
+  function buildPayload() {
     const depositNum = Number(step3.depositAmount) || 0;
     return {
-      jobRef: `JOB-${String(JOBS.length + 1).padStart(4, "0")}`,
-      createdAt: new Date().toISOString(),
+      storeId,
       customerName: step1.customerName,
       customerPhone: step1.customerPhone,
       customerEmail: step1.customerEmail || undefined,
@@ -113,7 +168,7 @@ export function NewSaleModal({ open, onClose, onSave }: Props) {
       carModel: step1.carModel,
       carVariant: step1.carVariant,
       carYear: Number(step1.carYear),
-      serviceType: step2.serviceType as Job["serviceType"],
+      serviceType: step2.serviceType,
       services: step2.services,
       products: step2.products,
       productsSubtotal,
@@ -142,18 +197,26 @@ export function NewSaleModal({ open, onClose, onSave }: Props) {
   }
 
   function handleSave(andPrint = false) {
-    const job = buildJob();
-    onSave?.(job);
-    if (andPrint) window.print();
-    handleClose();
+    const payload = buildPayload();
+    const onSuccess = () => {
+      if (andPrint) window.print();
+      handleClose();
+    };
+
+    if (isEditing && job) {
+      updateJob.mutate({ jobId: job.id, payload }, { onSuccess });
+    } else {
+      createJob.mutate(payload, { onSuccess });
+    }
   }
+
+  const isPending = createJob.isPending || updateJob.isPending;
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-      <DialogTitle>New Sale / Job</DialogTitle>
+      <DialogTitle>{isEditing ? "Edit Sale / Job" : "New Sale / Job"}</DialogTitle>
 
       <DialogContent dividers>
-        {/* Stepper nav */}
         <Stepper activeStep={step} sx={{ mb: 3 }}>
           {STEPS.map((label) => (
             <Step key={label}>
@@ -162,9 +225,8 @@ export function NewSaleModal({ open, onClose, onSave }: Props) {
           ))}
         </Stepper>
 
-        {/* Step content */}
         {step === 0 && (
-          <NewSaleStep1 data={step1} onChange={setStep1} existingJobs={JOBS} />
+          <NewSaleStep1 data={step1} onChange={setStep1} />
         )}
         {step === 1 && <NewSaleStep2 data={step2} onChange={setStep2} />}
         {step === 2 && (
@@ -194,11 +256,11 @@ export function NewSaleModal({ open, onClose, onSave }: Props) {
           </Button>
         ) : (
           <Box sx={{ display: "flex", gap: 1 }}>
-            <Button variant="outlined" onClick={() => handleSave(false)}>
-              Save Job
+            <Button variant="outlined" onClick={() => handleSave(false)} disabled={isPending}>
+              {isEditing ? "Update Job" : "Save Job"}
             </Button>
-            <Button variant="contained" onClick={() => handleSave(true)}>
-              Save &amp; Print
+            <Button variant="contained" onClick={() => handleSave(true)} disabled={isPending}>
+              {isEditing ? "Update & Print" : "Save & Print"}
             </Button>
           </Box>
         )}

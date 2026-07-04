@@ -31,7 +31,7 @@ export function InvoicesPage() {
         (inv) =>
           inv.invoiceNumber.toLowerCase().includes(q) ||
           inv.clientName.toLowerCase().includes(q) ||
-          inv.clientEmail.toLowerCase().includes(q),
+          inv.clientPhone.toLowerCase().includes(q),
       );
     }
 
@@ -62,9 +62,8 @@ export function InvoicesPage() {
   return (
     <Box>
       <PageHeader
-        title="Invoices"
         subtitle="Create and download invoices for your clients"
-        action={
+        action={(
           <Button
             variant="contained"
             startIcon={<AddOutlined />}
@@ -72,7 +71,7 @@ export function InvoicesPage() {
           >
             New Invoice
           </Button>
-        }
+        )}
       />
 
       <InvoiceSummaryBar invoices={invoices} />

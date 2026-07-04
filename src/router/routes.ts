@@ -9,6 +9,7 @@ export const ROUTES = {
   invoices: "/invoices",
   staff: "/staff",
   customers: "/customers",
+  changePassword: "/change-password",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];

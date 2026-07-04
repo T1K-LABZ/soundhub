@@ -1,8 +1,18 @@
-import { LogoutOutlined, MenuOutlined } from "@mui/icons-material";
-import { AppBar, Button, IconButton, Toolbar, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../features/auth/auth.store";
+import { MenuOutlined } from "@mui/icons-material";
+import { AppBar, Box, IconButton, Toolbar, Typography } from "@mui/material";
+import { useLocation } from "react-router-dom";
 import { ROUTES } from "../../router/routes";
+
+const PAGE_TITLES: Record<string, string> = {
+  [ROUTES.dashboard]: "Dashboard",
+  [ROUTES.products]: "Products",
+  [ROUTES.inventory]: "Inventory",
+  [ROUTES.sales]: "Sales",
+  [ROUTES.customers]: "Customers",
+  [ROUTES.invoices]: "Invoices",
+  [ROUTES.reports]: "Reports",
+  [ROUTES.staff]: "Staff",
+};
 
 type Props = {
   drawerWidth: number;
@@ -10,13 +20,8 @@ type Props = {
 };
 
 export function Topbar({ drawerWidth, onMenuClick }: Props) {
-  const logout = useAuthStore((s) => s.logout);
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    logout();
-    navigate(ROUTES.login);
-  }
+  const { pathname } = useLocation();
+  const title = PAGE_TITLES[pathname] ?? "SoundHub";
 
   return (
     <AppBar
@@ -26,17 +31,15 @@ export function Topbar({ drawerWidth, onMenuClick }: Props) {
       sx={{
         borderBottom: 1,
         borderColor: "divider",
-        // On desktop offset by the permanent sidebar; on mobile full width
         width: { md: `calc(100% - ${drawerWidth}px)` },
         ml: { md: `${drawerWidth}px` },
       }}
     >
-      <Toolbar sx={{ justifyContent: "space-between" }}>
+      <Toolbar>
         <IconButton
           color="inherit"
           edge="start"
           onClick={onMenuClick}
-          // Only show hamburger on mobile — desktop has the permanent sidebar
           sx={{ mr: 1, display: { md: "none" } }}
           aria-label="Open navigation menu"
         >
@@ -44,17 +47,18 @@ export function Topbar({ drawerWidth, onMenuClick }: Props) {
         </IconButton>
 
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          Inventory Management
+          {title}
         </Typography>
 
-        <Button
-          color="primary"
-          onClick={handleLogout}
-          startIcon={<LogoutOutlined />}
-          variant="outlined"
-        >
-          Logout
-        </Button>
+        <Box
+          component="img"
+          src="/images/soundhublogo.png"
+          alt="SoundHub"
+          sx={{
+            height: 28,
+            display: { xs: "block", md: "none" },
+          }}
+        />
       </Toolbar>
     </AppBar>
   );

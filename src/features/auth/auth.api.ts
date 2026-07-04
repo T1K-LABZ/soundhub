@@ -1,35 +1,35 @@
-import type { AuthResponse, LoginCredentials } from "./auth.types";
-
-const MOCK_CREDENTIALS = {
-  email: "admin",
-  password: "admin123",
-};
-
-const MOCK_USER = {
-  id: "1",
-  name: "Admin",
-  email: "admin",
-  storeId: "clx1234567890abcdefghij",
-};
-
-const MOCK_TOKEN = "mock-token-soundhub";
+import { apiClient } from '../../lib/axios'
+import type {
+  ApiResponse,
+  LoginCredentials,
+  LoginResponseData,
+  TokenResponseData,
+} from './auth.types'
 
 export async function login(
   credentials: LoginCredentials,
-): Promise<AuthResponse> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 800));
-
-  if (
-    credentials.email === MOCK_CREDENTIALS.email &&
-    credentials.password === MOCK_CREDENTIALS.password
-  ) {
-    return { user: MOCK_USER, token: MOCK_TOKEN };
-  }
-
-  throw new Error("Invalid credentials");
+): Promise<LoginResponseData> {
+  const response = await apiClient.post<ApiResponse<LoginResponseData>>(
+    '/auth/login',
+    credentials,
+  )
+  return response.data.data
 }
 
-export async function logout(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
+export async function refreshToken(
+  refreshToken: string,
+): Promise<TokenResponseData> {
+  const response = await apiClient.post<ApiResponse<TokenResponseData>>(
+    '/auth/refresh',
+    { refreshToken },
+  )
+  return response.data.data
+}
+
+export async function changePassword(newPassword: string): Promise<void> {
+  await apiClient.post('/auth/set-new-password', { newPassword })
+}
+
+export async function logout(refreshToken: string): Promise<void> {
+  await apiClient.post('/auth/logout', { refreshToken })
 }

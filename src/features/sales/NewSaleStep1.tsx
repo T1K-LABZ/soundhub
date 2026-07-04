@@ -1,5 +1,4 @@
-import { Alert, Grid, MenuItem, TextField } from "@mui/material";
-import type { Job } from "./sales.types";
+import { Grid, MenuItem, TextField } from "@mui/material";
 
 export type Step1Data = {
   customerName: string;
@@ -23,24 +22,18 @@ const CAR_MAKES_FORM = [
   "Ford",
   "Hyundai",
   "Honda",
+  "Mitsubishi",
 ];
 
 type Props = {
   data: Step1Data;
   onChange: (data: Step1Data) => void;
-  existingJobs: Job[];
 };
 
-export function NewSaleStep1({ data, onChange, existingJobs }: Props) {
+export function NewSaleStep1({ data, onChange }: Props) {
   function set(key: keyof Step1Data, value: string) {
     onChange({ ...data, [key]: value });
   }
-
-  // Check if plate already has jobs
-  const plateCleaned = data.carPlate.trim().toUpperCase();
-  const plateJobs = plateCleaned
-    ? existingJobs.filter((j) => j.carPlate.toUpperCase() === plateCleaned)
-    : [];
 
   return (
     <Grid container spacing={2} mt={1}>
@@ -79,7 +72,7 @@ export function NewSaleStep1({ data, onChange, existingJobs }: Props) {
         />
       </Grid>
 
-      {/* Plate field with existing-job check */}
+      {/* Plate field */}
       <Grid size={{ xs: 12, sm: 4 }}>
         <TextField
           label="Car Plate"
@@ -92,15 +85,6 @@ export function NewSaleStep1({ data, onChange, existingJobs }: Props) {
           inputProps={{ style: { textTransform: "uppercase" } }}
         />
       </Grid>
-
-      {plateJobs.length > 0 && (
-        <Grid size={{ xs: 12 }}>
-          <Alert severity="warning">
-            ⚠ This plate has {plateJobs.length} previous job
-            {plateJobs.length > 1 ? "s" : ""} on record.
-          </Alert>
-        </Grid>
-      )}
 
       <Grid size={{ xs: 12, sm: 4 }}>
         <TextField

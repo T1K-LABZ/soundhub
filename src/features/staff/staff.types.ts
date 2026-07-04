@@ -18,6 +18,78 @@ export type Specialization =
   | "Customer Service"
   | "All-round";
 
+// ── Backend response types ────────────────────────────────────────────────────
+
+export type Store = {
+  id: string;
+  name: string;
+  organizationId: string;
+  branchCode: string | null;
+  phone: string;
+  address: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UserStore = {
+  role: string;
+  assignedAt: string;
+  store: Store;
+};
+
+export type AssignableRole = {
+  id: string;
+  name: string;
+  permissions: Record<string, { view: boolean; create: boolean; edit: boolean; delete: boolean }>;
+};
+
+// ── Backend role types ───────────────────────────────────────────────────────
+
+export type PermissionModule = {
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
+};
+
+export type RolePermissions = Record<string, PermissionModule>;
+
+export type BackendRole = {
+  id: string;
+  storeId: string;
+  name: string;
+  permissions: RolePermissions;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateRolePayload = {
+  storeId: string;
+  name: string;
+  permissions: RolePermissions;
+};
+
+export type UpdateRolePayload = Partial<Omit<CreateRolePayload, "storeId">>;
+
+export type CreateStaffPayload = {
+  storeId: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  password: string;
+  customRoleId: string;
+  nationalId: string;
+  dateOfBirth: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  employmentType: string;
+  specializations: string[];
+  dateJoined: string;
+  salaryRate: number;
+  notes: string;
+  status: string;
+};
+
 // ── Core staff record ─────────────────────────────────────────────────────────
 
 export type StaffMember = {
@@ -86,7 +158,8 @@ export type PagePermissions = {
 
 export type AddStaffForm = {
   // Step 1
-  fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
   nationalId: string;
@@ -94,7 +167,8 @@ export type AddStaffForm = {
   emergencyContactName: string;
   emergencyContactPhone: string;
   // Step 2
-  role: StaffRole;
+  role: string;
+  customRoleId: string;
   employmentType: EmploymentType;
   specializations: Specialization[];
   dateJoined: string;
@@ -102,9 +176,27 @@ export type AddStaffForm = {
   notes: string;
   status: StaffStatus;
   // Step 3
-  username: string;
-  tempPassword: string;
-  permissions: PagePermissions;
+  password: string;
+};
+
+// ── Backend staff response ───────────────────────────────────────────────────
+
+export type BackendStaffUser = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  isPhoneVerified: boolean;
+  isActive: boolean;
+};
+
+export type BackendStaffMember = {
+  id: string;
+  role: string;
+  customRole: { id: string; name: string } | null;
+  createdAt: string;
+  user: BackendStaffUser;
+  verificationStatus: "UNVERIFIED" | "VERIFIED";
 };
 
 // ── Filter type ───────────────────────────────────────────────────────────────

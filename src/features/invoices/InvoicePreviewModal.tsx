@@ -83,9 +83,9 @@ export function InvoicePreviewModal({ invoice, onClose, onEdit }: Props) {
             <Typography variant="body1" fontWeight={600} sx={{ mt: 0.5 }}>
               {invoice.clientName}
             </Typography>
-            {invoice.clientEmail && (
+            {invoice.clientPhone && (
               <Typography variant="body2" color="text.secondary">
-                {invoice.clientEmail}
+                {invoice.clientPhone}
               </Typography>
             )}
           </Box>

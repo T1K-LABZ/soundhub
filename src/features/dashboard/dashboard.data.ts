@@ -1,7 +1,7 @@
 import type { ActivityItem, StatItem } from "./dashboard.types";
 
 export const DASHBOARD_STATS: StatItem[] = [
-  { label: "Total Products", value: "124", color: "#D42F23" },
+  { label: "Total Products", value: "124", color: "#F70000" },
   { label: "Items in Stock", value: "3,842", color: "#2563EB" },
   { label: "Today's Sales", value: "KSh 1,290", color: "#16A34A" },
   { label: "Monthly Revenue", value: "KSh 24,580", color: "#9333EA" },

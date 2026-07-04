@@ -12,8 +12,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
+import { useAuthStore } from "../auth/auth.store";
 import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
-import { INVENTORY_PRODUCTS } from "./inventory.data";
+import { useItemsQuery, useReceiveStock } from "./inventory.api";
 import type { CreateIncomingBatchItem, CreateIncomingForm } from "./inventory.types";
 import { IncomingBatchRow } from "./IncomingBatchRow";
 
@@ -26,6 +27,7 @@ function makeEmptyItem(): CreateIncomingBatchItem {
     quantity: 0,
     buyingPrice: 0,
     sellingPrice: 0,
+    status: "IN_TRANSIT",
   };
 }
 
@@ -41,6 +43,9 @@ const EMPTY_FORM: CreateIncomingForm = {
 };
 
 export function CreateIncomingModal({ open, onClose }: Props) {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: products = [] } = useItemsQuery(storeId);
+  const receiveStock = useReceiveStock();
   const [form, setForm] = useState<CreateIncomingForm>(EMPTY_FORM);
   const [scanningItemId, setScanningItemId] = useState<string | null>(null);
 
@@ -68,12 +73,12 @@ export function CreateIncomingModal({ open, onClose }: Props) {
 
   function handleBarcodeDetected(barcode: string) {
     if (!scanningItemId) return;
-    const product = INVENTORY_PRODUCTS.find((p) => p.barcode === barcode);
+    const product = products.find((p) => p.barcode === barcode);
     if (product) {
       setForm((p) => ({
         ...p,
         items: p.items.map((it) =>
-          it.id === scanningItemId ? { ...it, productId: product.productId } : it,
+          it.id === scanningItemId ? { ...it, productId: product.id } : it,
         ),
       }));
     }
@@ -81,9 +86,24 @@ export function CreateIncomingModal({ open, onClose }: Props) {
   }
 
   function handleSubmit() {
-    // TODO: call inventory API
-    console.log("Create incoming stock:", form);
-    handleClose();
+    receiveStock.mutate(
+      {
+        storeId,
+        supplier: form.supplier,
+        expectedDate: form.expectedDate,
+        trackingRef: form.trackingRef,
+        notes: form.notes,
+        createdBy: form.createdBy,
+        items: form.items.map((it) => ({
+          productId: it.productId,
+          quantity: it.quantity,
+          buyingPrice: it.buyingPrice,
+          sellingPrice: it.sellingPrice,
+          status: it.status,
+        })),
+      },
+      { onSuccess: handleClose },
+    );
   }
 
   function handleClose() {
@@ -223,7 +243,7 @@ export function CreateIncomingModal({ open, onClose }: Props) {
                   key={item.id}
                   item={item}
                   index={idx}
-                  products={INVENTORY_PRODUCTS}
+                  products={products}
                   canRemove={form.items.length > 1}
                   onScanClick={(id) => setScanningItemId(id)}
                   onChange={handleItemChange}

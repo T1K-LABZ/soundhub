@@ -56,7 +56,7 @@ export function InvoiceCard({ invoice, onPreview, onDownload }: Props) {
             {invoice.clientName}
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block">
-            {invoice.clientEmail}
+            {invoice.clientPhone}
           </Typography>
         </Box>
 

@@ -12,10 +12,9 @@ type Props = {
   jobs: Job[];
   onView: (job: Job) => void;
   onEdit: (job: Job) => void;
-  onPrint: (job: Job) => void;
 };
 
-export function SalesTable({ jobs, onView, onEdit, onPrint }: Props) {
+export function SalesTable({ jobs, onView, onEdit }: Props) {
   const [visibleCount, setVisibleCount] = useState(SALES_ROWS_PER_PAGE);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -46,7 +45,6 @@ export function SalesTable({ jobs, onView, onEdit, onPrint }: Props) {
               }
               onView={() => onView(job)}
               onEdit={() => onEdit(job)}
-              onPrint={() => onPrint(job)}
             />
           ))}
         </Box>

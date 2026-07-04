@@ -16,7 +16,9 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { calcSalesSummary, filterJobs, JOBS } from "./sales.data";
+import { useAuthStore } from "../auth/auth.store";
+import { useJobsQuery, useSalesStatsQuery } from "./sales.api";
+import { filterJobs } from "./sales.data";
 import type { SalesFilters } from "./sales.types";
 import type { Job } from "./sales.types";
 import { DEFAULT_SALES_FILTERS, SalesFiltersBar } from "./SalesFiltersBar";
@@ -42,100 +44,108 @@ type ModalType =
 // ── SalesPage ─────────────────────────────────────────────────────────────────
 
 export function SalesPage() {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const role = useAuthStore((s) => s.user?.role);
+  const isOwner = role === "OWNER";
+  const { data: allJobs = [] } = useJobsQuery(storeId);
+  const { data: stats } = useSalesStatsQuery(storeId);
+
   const [filters, setFilters] = useState<SalesFilters>(DEFAULT_SALES_FILTERS);
   const [openModal, setOpenModal] = useState<ModalType>(null);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
 
-  const summary = calcSalesSummary(JOBS);
-  const filtered = filterJobs(JOBS, filters);
+  // Always derive selectedJob from the fresh API list so edits are reflected
+  const selectedJob = selectedJobId
+    ? allJobs.find((j) => j.id === selectedJobId) ?? null
+    : null;
+
+  const filtered = filterJobs(allJobs, filters);
 
   function handleView(job: Job) {
-    setSelectedJob(job);
+    setSelectedJobId(job.id);
     setOpenModal("viewJob");
   }
 
   function handleEdit(job: Job) {
-    // TODO: wire up an EditJobModal or re-use NewSaleModal in edit mode
-    setSelectedJob(job);
+    setSelectedJobId(job.id);
     setOpenModal("newSale");
-  }
-
-  function handlePrint(job: Job) {
-    setSelectedJob(job);
-    window.print();
   }
 
   return (
     <Box>
       <PageHeader
-        title="Sales & Jobs"
         subtitle="Manage all customer jobs, installations, and payments"
+        action={(
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
+            <Button
+              variant="contained"
+              color="warning"
+              startIcon={<AddOutlined />}
+              onClick={() => setOpenModal("newSale")}
+            >
+              New Sale / Job
+            </Button>
+            {isOwner && (
+              <Button
+                variant="outlined"
+                startIcon={<ShoppingBagOutlined />}
+                onClick={() => setOpenModal("walkIn")}
+              >
+                Walk-In
+              </Button>
+            )}
+            {isOwner && (
+              <IconButton
+                onClick={(e) => setMoreAnchor(e.currentTarget)}
+                size="small"
+              >
+                <MoreVertOutlined />
+              </IconButton>
+            )}
+          </Box>
+        )}
       />
 
-      {/* 1. Summary bar */}
-      <SalesSummaryBar summary={summary} />
+      {/* Summary bar — owners only */}
+      {isOwner && stats && <SalesSummaryBar stats={stats} />}
 
-      {/* 2. Quick action buttons */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3, alignItems: "center" }}>
-        <Button
-          variant="contained"
-          color="warning"
-          startIcon={<AddOutlined />}
-          onClick={() => setOpenModal("newSale")}
-        >
-          New Sale / Job
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<ShoppingBagOutlined />}
-          onClick={() => setOpenModal("walkIn")}
-        >
-          Walk-In
-        </Button>
-        <IconButton
-          onClick={(e) => setMoreAnchor(e.currentTarget)}
-          size="small"
-        >
-          <MoreVertOutlined />
-        </IconButton>
+      {isOwner && (
         <Menu
-          anchorEl={moreAnchor}
-          open={Boolean(moreAnchor)}
-          onClose={() => setMoreAnchor(null)}
+            anchorEl={moreAnchor}
+            open={Boolean(moreAnchor)}
+            onClose={() => setMoreAnchor(null)}
         >
-          <MenuItem onClick={() => { setOpenModal("plateSearch"); setMoreAnchor(null); }}>
-            <ListItemIcon><SearchOutlined fontSize="small" /></ListItemIcon>
-            <ListItemText>Search by Plate</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => { setOpenModal("manageServices"); setMoreAnchor(null); }}>
-            <ListItemIcon><SettingsOutlined fontSize="small" /></ListItemIcon>
-            <ListItemText>Manage Services</ListItemText>
-          </MenuItem>
+            <MenuItem onClick={() => { setOpenModal("plateSearch"); setMoreAnchor(null); }}>
+              <ListItemIcon><SearchOutlined fontSize="small" /></ListItemIcon>
+              <ListItemText>Search by Plate</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => { setOpenModal("manageServices"); setMoreAnchor(null); }}>
+              <ListItemIcon><SettingsOutlined fontSize="small" /></ListItemIcon>
+              <ListItemText>Manage Services</ListItemText>
+            </MenuItem>
         </Menu>
-      </Box>
+      )}
 
-      {/* 3. Filters bar */}
       <SalesFiltersBar filters={filters} onChange={setFilters} />
 
-      {/* 4. Jobs table */}
       <SalesTable
         jobs={filtered}
         onView={handleView}
         onEdit={handleEdit}
-        onPrint={handlePrint}
       />
 
-      {/* 5. Knowledge base */}
-      <KnowledgeBasePanel />
+      {/* Knowledge base — owners only */}
+      {isOwner && <KnowledgeBasePanel />}
 
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
       <NewSaleModal
         open={openModal === "newSale"}
         onClose={() => {
           setOpenModal(null);
-          setSelectedJob(null);
+          setSelectedJobId(null);
         }}
+        job={selectedJob}
       />
 
       <WalkInModal
@@ -158,7 +168,7 @@ export function SalesPage() {
         job={selectedJob}
         onClose={() => {
           setOpenModal(null);
-          setSelectedJob(null);
+          setSelectedJobId(null);
         }}
       />
     </Box>

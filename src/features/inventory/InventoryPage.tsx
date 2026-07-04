@@ -1,242 +1,241 @@
 import {
-  AssignmentReturnOutlined,
+  AddOutlined,
+  CategoryOutlined,
   CallReceivedOutlined,
-  DeleteOutlined,
   LocalShippingOutlined,
-  LockOutlined,
-  MoreVertOutlined,
+  Inventory2Outlined,
+  SearchOutlined,
 } from "@mui/icons-material";
 import {
   Box,
   Button,
-  IconButton,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
+  Chip,
+  CircularProgress,
+  Grid,
+  InputAdornment,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useAuthStore } from "../auth/auth.store";
 import { PageHeader } from "../../components/ui/PageHeader";
-import {
-  buildInsightProducts,
-  buildProductMovementRanks,
-  buildStockMovementPoints,
-  INVENTORY_PRODUCTS,
-  STOCK_MOVEMENTS,
-} from "./inventory.data";
-import {
-  InventoryFiltersBar,
-  type InventoryFilters,
-} from "./InventoryFiltersBar";
-import { InventorySummaryBar } from "./InventorySummaryBar";
-import { InventoryTable } from "./InventoryTable";
-import { LowStockPanel } from "./LowStockPanel";
-import { ProcessReturnModal } from "./ProcessReturnModal";
+import { AddProductModal } from "../products/AddProductModal";
+import { CategoryModal } from "../products/CategoryModal";
+import { getItems, mapItemToProduct } from "../products/products.api";
+import type { Product } from "../products/products.types";
+import { useBatchesQuery } from "./inventory.api";
+import type { BatchItem } from "./inventory.api";
+import { ProductStockCard } from "./ProductStockCard";
+import { BatchList } from "./BatchList";
+import { QuickReceiveModal } from "./QuickReceiveModal";
 import { ReceiveStockModal } from "./ReceiveStockModal";
-import { ReserveStockModal } from "./ReserveStockModal";
-import { WriteOffModal } from "./WriteOffModal";
 import { CreateIncomingModal } from "./CreateIncomingModal";
-import { ArriveStockModal } from "./ArriveStockModal";
-import { calcSummary, filterMovements } from "./inventory.utils";
-import { InventoryChartControls } from "./InventoryChartControls";
-import { InventoryStockChart } from "./InventoryStockChart";
-import { InventoryMovementRanking } from "./InventoryMovementRanking";
-import { InventoryInsightCards } from "./InventoryInsightCards";
-import type { StockMovement, TimeRange } from "./inventory.types";
-
-const DEFAULT_FILTERS: InventoryFilters = {
-  search: "",
-  category: "All Categories",
-  brand: "All Brands",
-  movementType: "All Types",
-  staff: "All Staff",
-  dateFrom: "",
-  dateTo: "",
-};
-
-type ModalType = "receive" | "reserve" | "writeoff" | "return" | "incoming" | null;
+import { ProductDetailModal } from "./ProductDetailModal";
 
 export function InventoryPage() {
-  const [filters, setFilters] = useState<InventoryFilters>(DEFAULT_FILTERS);
-  const [openModal, setOpenModal] = useState<ModalType>(null);
-  const [productNameFilter, setProductNameFilter] = useState<string[]>([]);
-  const [incomingToArrive, setIncomingToArrive] = useState<StockMovement | null>(null);
-  const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState(0);
+  const [batchTab, setBatchTab] = useState(0);
 
-  // Chart state
-  const [chartRange, setChartRange] = useState<TimeRange>("30D");
-  const [chartCategory, setChartCategory] = useState<string>("");
+  // Modal state
+  const [addProductOpen, setAddProductOpen] = useState(false);
+  const [editProductId, setEditProductId] = useState<string | null>(null);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [receiveProduct, setReceiveProduct] = useState<Product | null>(null);
+  const [bulkReceiveOpen, setBulkReceiveOpen] = useState(false);
+  const [createIncomingOpen, setCreateIncomingOpen] = useState(false);
+  const [viewProduct, setViewProduct] = useState<Product | null>(null);
 
-  const summary = calcSummary(INVENTORY_PRODUCTS, STOCK_MOVEMENTS);
-  const filtered = filterMovements(STOCK_MOVEMENTS, {
-    ...filters,
-    productNames: productNameFilter,
-  });
+  // Determine modal mode
+  const isEditing = Boolean(editProductId);
+  const productModalOpen = addProductOpen || isEditing;
+  const editingProduct = editProductId ? products.find((p) => p.id === editProductId) ?? null : null;
 
-  // Chart-specific derived data
-  const stockMovementPoints = buildStockMovementPoints(
-    STOCK_MOVEMENTS,
-    chartRange,
-    chartCategory,
-  );
-  const productRanks = buildProductMovementRanks(
-    STOCK_MOVEMENTS,
-    chartRange,
-    chartCategory,
-  );
-  const { fastest, slowest } = buildInsightProducts(
-    STOCK_MOVEMENTS,
-    INVENTORY_PRODUCTS,
-  );
+  // Batch queries
+  const { data: inTransitBatches = { items: [], total: 0 } } = useBatchesQuery(storeId, "IN_TRANSIT");
+  const { data: pendingBatches = { items: [], total: 0 } } = useBatchesQuery(storeId, "PENDING");
+  const { data: activeBatches = { items: [], total: 0 } } = useBatchesQuery(storeId, "ACTIVE");
 
-  function handleLowStockClick() {
-    const names = INVENTORY_PRODUCTS.filter(
-      (p) => p.quantityOnHand > 0 && p.quantityOnHand <= p.reorderPoint,
-    ).map((p) => p.productName);
-    setProductNameFilter(names);
-    setFilters(DEFAULT_FILTERS);
+  const fetchProducts = useCallback(async () => {
+    if (!storeId) return;
+    setLoading(true);
+    try {
+      const { data } = await getItems(storeId, search ? { search } : undefined);
+      setProducts(data.map(mapItemToProduct));
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [storeId, search]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  function handleQuickReceive(productId: string, quantity: number) {
+    console.log("Quick receive:", { productId, quantity });
+    setReceiveProduct(null);
+    fetchProducts();
   }
 
-  function handleOutOfStockClick() {
-    const names = INVENTORY_PRODUCTS.filter((p) => p.quantityOnHand === 0).map(
-      (p) => p.productName,
-    );
-    setProductNameFilter(names);
-    setFilters(DEFAULT_FILTERS);
-  }
-
-  function handleFiltersChange(f: InventoryFilters) {
-    // Changing any filter bar control clears the quick product-name filter
-    setProductNameFilter([]);
-    setFilters(f);
-  }
-
-  function handleArriveClick(movement: StockMovement) {
-    setIncomingToArrive(movement);
-  }
-
-  function handleArriveConfirm(movementId: string, arrivedQuantity: number) {
-    // TODO: call inventory API — update movement status and add to stock
-    console.log("Arrive stock:", { movementId, arrivedQuantity });
-    setIncomingToArrive(null);
-  }
+  const lowStockCount = products.filter(
+    (p) => p.stockQuantity > 0 && p.stockQuantity <= p.lowStockThreshold,
+  ).length;
+  const outOfStockCount = products.filter((p) => p.stockQuantity === 0).length;
+  const totalIncoming = inTransitBatches.total + pendingBatches.total;
 
   return (
     <Box>
       <PageHeader
-        title="Inventory"
-        subtitle="Track all stock movements across your store"
+        subtitle="Manage products, stock, and incoming shipments"
+        action={
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            <Button variant="outlined" startIcon={<CategoryOutlined />} onClick={() => setCategoryModalOpen(true)}>
+              Categories
+            </Button>
+            <Button variant="contained" startIcon={<AddOutlined />} onClick={() => setAddProductOpen(true)}>
+              Add Product
+            </Button>
+          </Box>
+        }
       />
 
-      {/* 1. Summary bar */}
-      <InventorySummaryBar
-        summary={summary}
-        onLowStockClick={handleLowStockClick}
-        onOutOfStockClick={handleOutOfStockClick}
-      />
-
-      {/* 2. Quick action buttons */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3, alignItems: "center" }}>
-        <Button
-          variant="contained"
-          startIcon={<CallReceivedOutlined />}
-          onClick={() => setOpenModal("receive")}
-        >
-          Receive Stock
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<LocalShippingOutlined />}
-          onClick={() => setOpenModal("incoming")}
-        >
-          Create Incoming
-        </Button>
-        <IconButton
-          onClick={(e) => setMoreAnchor(e.currentTarget)}
-          size="small"
-        >
-          <MoreVertOutlined />
-        </IconButton>
-        <Menu
-          anchorEl={moreAnchor}
-          open={Boolean(moreAnchor)}
-          onClose={() => setMoreAnchor(null)}
-        >
-          <MenuItem onClick={() => { setOpenModal("reserve"); setMoreAnchor(null); }}>
-            <ListItemIcon><LockOutlined fontSize="small" /></ListItemIcon>
-            <ListItemText>Reserve Stock</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => { setOpenModal("writeoff"); setMoreAnchor(null); }}>
-            <ListItemIcon><DeleteOutlined fontSize="small" color="error" /></ListItemIcon>
-            <ListItemText>Write Off / Damaged</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => { setOpenModal("return"); setMoreAnchor(null); }}>
-            <ListItemIcon><AssignmentReturnOutlined fontSize="small" /></ListItemIcon>
-            <ListItemText>Process Return</ListItemText>
-          </MenuItem>
-        </Menu>
+      {/* Summary chips */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
+        <Chip icon={<Inventory2Outlined />} label={`${products.length} Products`} variant="outlined" />
+        <Chip icon={<CallReceivedOutlined />} label={`${lowStockCount} Low Stock`} color="warning" variant="outlined" />
+        <Chip icon={<Inventory2Outlined />} label={`${outOfStockCount} Out of Stock`} color="error" variant="outlined" />
+        <Chip icon={<LocalShippingOutlined />} label={`${totalIncoming} Incoming`} color="info" variant="outlined" />
       </Box>
 
-      {/* 3. Filters bar */}
-      <InventoryFiltersBar filters={filters} onChange={handleFiltersChange} />
+      {/* Tabs */}
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
+        <Tab label={`Products (${products.length})`} />
+        <Tab label={
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            Incoming Stock
+            {totalIncoming > 0 && <Chip label={totalIncoming} size="small" color="info" />}
+          </Box>
+        } />
+      </Tabs>
 
-      {/* 4. Charts & analytics section */}
-      <Box sx={{ mt: 3, mb: 1 }}>
-        <InventoryChartControls
-          range={chartRange}
-          category={chartCategory}
-          onRangeChange={setChartRange}
-          onCategoryChange={setChartCategory}
-        />
+      {tab === 0 && (
+        <Box>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
+            <TextField
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              size="small"
+              sx={{ minWidth: 260 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchOutlined fontSize="small" />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            <Button variant="outlined" startIcon={<CallReceivedOutlined />} onClick={() => setBulkReceiveOpen(true)}>
+              Receive Stock
+            </Button>
+            <Button variant="outlined" startIcon={<LocalShippingOutlined />} onClick={() => setCreateIncomingOpen(true)}>
+              Create Incoming
+            </Button>
+          </Box>
 
-        {/* Two charts side by side, stack on mobile */}
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <InventoryStockChart data={stockMovementPoints} />
-          <InventoryMovementRanking data={productRanks} />
+          {/* Product grid */}
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : products.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Inventory2Outlined sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />
+              <Typography variant="body1" color="text.secondary">
+                No products found
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              {products.map((product) => (
+                <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                  <ProductStockCard
+                    product={product}
+                    onEdit={(p) => setEditProductId(p.id)}
+                    onReceive={(p) => setReceiveProduct(p)}
+                    onClick={(p) => setViewProduct(p)}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
         </Box>
+      )}
 
-        {/* Insight cards */}
-        <InventoryInsightCards fastest={fastest} slowest={slowest} />
-      </Box>
+      {/* Tab 1: Incoming Stock */}
+      {tab === 1 && (
+        <Box>
+          <Tabs value={batchTab} onChange={(_, v) => setBatchTab(v)} sx={{ mb: 2 }}>
+            <Tab label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                In Transit
+                {inTransitBatches.total > 0 && <Chip label={inTransitBatches.total} size="small" color="info" />}
+              </Box>
+            } />
+            <Tab label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                Pending
+                {pendingBatches.total > 0 && <Chip label={pendingBatches.total} size="small" color="warning" />}
+              </Box>
+            } />
+            <Tab label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                Active
+                {activeBatches.total > 0 && <Chip label={activeBatches.total} size="small" color="success" />}
+              </Box>
+            } />
+          </Tabs>
 
-      {/* 5. Stock movement table */}
-      <InventoryTable movements={filtered} onArriveClick={handleArriveClick} />
+          {batchTab === 0 && <BatchList batches={inTransitBatches.items} />}
+          {batchTab === 1 && <BatchList batches={pendingBatches.items} />}
+          {batchTab === 2 && <BatchList batches={activeBatches.items} />}
+        </Box>
+      )}
 
-      {/* 6. Low stock alert panel */}
-      <LowStockPanel products={INVENTORY_PRODUCTS} />
-
-      {/* 7. Action modals */}
-      <ReceiveStockModal
-        open={openModal === "receive"}
-        onClose={() => setOpenModal(null)}
+      {/* Modals */}
+      <AddProductModal
+        open={productModalOpen}
+        onClose={() => {
+          setAddProductOpen(false);
+          setEditProductId(null);
+          fetchProducts();
+        }}
+        productId={editProductId ?? undefined}
+        product={editingProduct}
       />
-      <CreateIncomingModal
-        open={openModal === "incoming"}
-        onClose={() => setOpenModal(null)}
+      <CategoryModal open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} />
+      <QuickReceiveModal
+        open={Boolean(receiveProduct)}
+        product={receiveProduct}
+        onClose={() => setReceiveProduct(null)}
+        onConfirm={handleQuickReceive}
       />
-      <ReserveStockModal
-        open={openModal === "reserve"}
-        onClose={() => setOpenModal(null)}
-      />
-      <WriteOffModal
-        open={openModal === "writeoff"}
-        onClose={() => setOpenModal(null)}
-      />
-      <ProcessReturnModal
-        open={openModal === "return"}
-        onClose={() => setOpenModal(null)}
-      />
-      <ArriveStockModal
-        open={incomingToArrive !== null}
-        incoming={incomingToArrive}
-        onClose={() => setIncomingToArrive(null)}
-        onConfirm={handleArriveConfirm}
+      <ReceiveStockModal open={bulkReceiveOpen} onClose={() => setBulkReceiveOpen(false)} />
+      <CreateIncomingModal open={createIncomingOpen} onClose={() => setCreateIncomingOpen(false)} />
+      <ProductDetailModal
+        product={viewProduct}
+        open={Boolean(viewProduct)}
+        onClose={() => setViewProduct(null)}
+        storeId={storeId}
       />
     </Box>
   );

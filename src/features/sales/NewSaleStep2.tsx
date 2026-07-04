@@ -9,14 +9,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { INVENTORY_PRODUCTS } from "../inventory/inventory.data";
-import { DEFAULT_SERVICES } from "./sales.constants";
-import type { JobProduct, ServiceDefinition, ServiceType } from "./sales.types";
+import { useAuthStore } from "../auth/auth.store";
+import { useItemsQuery } from "../inventory/inventory.api";
+import { useServicesQuery } from "./sales.api";
+import type { JobProduct, ServiceType } from "./sales.types";
 import { formatKsh } from "./sales.utils";
 
 export type Step2Data = {
   serviceType: ServiceType | "";
-  services: ServiceDefinition[];
+  services: { id: string; name: string; basePrice: number }[];
   products: JobProduct[];
   discount: number;
 };
@@ -36,6 +37,10 @@ const SERVICE_TYPE_OPTIONS: ServiceType[] = [
 ];
 
 export function NewSaleStep2({ data, onChange }: Props) {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: apiServices = [] } = useServicesQuery(storeId);
+  const { data: apiProducts = [] } = useItemsQuery(storeId);
+
   function set<K extends keyof Step2Data>(key: K, value: Step2Data[K]) {
     onChange({ ...data, [key]: value });
   }
@@ -43,9 +48,9 @@ export function NewSaleStep2({ data, onChange }: Props) {
   // ── Services ────────────────────────────────────────────────────────────────
 
   function addService(id: string) {
-    const svc = DEFAULT_SERVICES.find((s) => s.id === id);
+    const svc = apiServices.find((s) => s.id === id);
     if (!svc || data.services.find((s) => s.id === id)) return;
-    set("services", [...data.services, svc]);
+    set("services", [...data.services, { id: svc.id, name: svc.name, basePrice: Number(svc.basePrice) }]);
   }
 
   function removeService(id: string) {
@@ -58,13 +63,15 @@ export function NewSaleStep2({ data, onChange }: Props) {
   // ── Products ────────────────────────────────────────────────────────────────
 
   function addProduct() {
-    const first = INVENTORY_PRODUCTS[0];
+    if (apiProducts.length === 0) return;
+    const first = apiProducts[0];
+    const price = Number(first.sellingPrice) || 0;
     const line: JobProduct = {
-      productId: first.productId,
-      productName: first.productName,
+      productId: first.id,
+      productName: first.name,
       quantity: 1,
-      unitPrice: first.sellingPrice,
-      lineTotal: first.sellingPrice,
+      unitPrice: price,
+      lineTotal: price,
     };
     set("products", [...data.products, line]);
   }
@@ -78,13 +85,13 @@ export function NewSaleStep2({ data, onChange }: Props) {
       if (i !== idx) return p;
       const next = { ...p, [field]: value };
       if (field === "productId") {
-        const found = INVENTORY_PRODUCTS.find((ip) => ip.productId === value);
+        const found = apiProducts.find((ip) => ip.id === value);
         if (found) {
-          next.productName = found.productName;
-          next.unitPrice = found.sellingPrice;
+          next.productName = found.name;
+          next.unitPrice = Number(found.sellingPrice);
         }
       }
-      next.lineTotal = next.quantity * next.unitPrice;
+      next.lineTotal = Number(next.quantity) * Number(next.unitPrice);
       return next;
     });
     set("products", updated);
@@ -97,14 +104,15 @@ export function NewSaleStep2({ data, onChange }: Props) {
     );
   }
 
-  const productsSubtotal = data.products.reduce((s, p) => s + p.lineTotal, 0);
+  const productsSubtotal = data.products.reduce((s, p) => s + Number(p.lineTotal), 0);
   const servicesSubtotal = data.services.reduce(
-    (s, svc) => s + svc.basePrice,
+    (s, svc) => s + Number(svc.basePrice),
     0,
   );
+  const discount = Number(data.discount) || 0;
   const grandTotal = Math.max(
     0,
-    productsSubtotal + servicesSubtotal - data.discount,
+    productsSubtotal + servicesSubtotal - discount,
   );
 
   return (
@@ -160,11 +168,13 @@ export function NewSaleStep2({ data, onChange }: Props) {
         onChange={(e) => addService(e.target.value)}
         sx={{ minWidth: 220, mt: 1, mb: 2 }}
       >
-        {DEFAULT_SERVICES.filter((s) => s.active).map((s) => (
-          <MenuItem key={s.id} value={s.id}>
-            {s.name} — {formatKsh(s.basePrice)}
-          </MenuItem>
-        ))}
+        {apiServices
+          .filter((s) => s.active)
+          .map((s) => (
+            <MenuItem key={s.id} value={s.id}>
+              {s.name} — {formatKsh(s.basePrice)}
+            </MenuItem>
+          ))}
       </TextField>
 
       <Divider sx={{ my: 2 }} />
@@ -189,9 +199,9 @@ export function NewSaleStep2({ data, onChange }: Props) {
               value={p.productId}
               onChange={(e) => updateProduct(idx, "productId", e.target.value)}
             >
-              {INVENTORY_PRODUCTS.map((ip) => (
-                <MenuItem key={ip.productId} value={ip.productId}>
-                  {ip.productName}
+              {apiProducts.map((ip) => (
+                <MenuItem key={ip.id} value={ip.id}>
+                  {ip.name}
                 </MenuItem>
               ))}
             </TextField>

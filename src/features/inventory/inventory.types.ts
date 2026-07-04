@@ -64,6 +64,7 @@ export type StockBatchItem = {
   quantity: number;
   buyingPrice: number; // price this batch was purchased at
   sellingPrice: number; // price this batch will be sold at (may differ from existing stock)
+  status: "PENDING" | "ACTIVE";
 };
 
 // The full "Receive Stock" payload — one delivery, multiple product lines
@@ -116,6 +117,7 @@ export type CreateIncomingBatchItem = {
   quantity: number;
   buyingPrice: number;
   sellingPrice: number;
+  status: "PENDING" | "ACTIVE";
 };
 
 // ── Chart types ──────────────────────────────────────────────────────────────

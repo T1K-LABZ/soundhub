@@ -3,16 +3,16 @@ import {
   CheckCircleOutlined,
   HourglassEmptyOutlined,
   MoneyOffOutlined,
+  PendingActionsOutlined,
   TodayOutlined,
 } from "@mui/icons-material";
 import {
   Box,
   Card,
   CardContent,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import type { SalesSummary } from "./sales.types";
+import type { SalesStats } from "./sales.api";
 import { formatKsh } from "./sales.utils";
 
 type SummaryCardProps = {
@@ -27,7 +27,12 @@ function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
   return (
     <Card
       variant="outlined"
-      sx={{ height: "100%", minWidth: 0, flex: "1 1 0", display: "flex" }}
+      sx={{
+        height: "100%",
+        minWidth: 140,
+        flex: "1 1 140px",
+        display: "flex",
+      }}
     >
       <CardContent
         sx={{
@@ -54,21 +59,31 @@ function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
           {icon}
         </Box>
 
-        <Box sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
-          <Typography variant="caption" color="text.secondary" display="block" noWrap>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            sx={{ lineHeight: 1.2, mb: 0.25 }}
+          >
             {label}
           </Typography>
-          <Tooltip title={value} disableHoverListener={value.length < 18}>
-            <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ lineHeight: 1.3 }}>
-              {value}
-            </Typography>
-          </Tooltip>
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            sx={{ lineHeight: 1.2, wordBreak: "break-word" }}
+          >
+            {value}
+          </Typography>
           {sub && (
-            <Tooltip title={sub} disableHoverListener={sub.length < 25}>
-              <Typography variant="caption" color="text.secondary" display="block" noWrap>
-                {sub}
-              </Typography>
-            </Tooltip>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+              sx={{ lineHeight: 1.2, mt: 0.25 }}
+            >
+              {sub}
+            </Typography>
           )}
         </Box>
       </CardContent>
@@ -77,10 +92,10 @@ function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
 }
 
 type Props = {
-  summary: SalesSummary;
+  stats: SalesStats;
 };
 
-export function SalesSummaryBar({ summary }: Props) {
+export function SalesSummaryBar({ stats }: Props) {
   return (
     <Box
       sx={{
@@ -99,36 +114,41 @@ export function SalesSummaryBar({ summary }: Props) {
       <Box sx={{ display: "flex", gap: 1.5, minWidth: "min-content" }}>
         <SummaryCard
           label="Sales This Month"
-          value={formatKsh(summary.totalSalesMonth)}
+          value={formatKsh(stats.totalSalesThisMonth)}
           icon={<AttachMoneyOutlined fontSize="small" />}
           color="#9333EA"
         />
         <SummaryCard
           label="Paid Jobs"
-          value={summary.paidCount.toString()}
-          sub={formatKsh(summary.paidValue)}
+          value={stats.paidJobs.toString()}
+          sub={`${stats.totalSales} total`}
           icon={<CheckCircleOutlined fontSize="small" />}
           color="#16A34A"
         />
         <SummaryCard
           label="Unpaid Jobs"
-          value={summary.unpaidCount.toString()}
-          sub={formatKsh(summary.unpaidValue)}
+          value={stats.unpaidJobs.toString()}
+          sub={formatKsh(stats.totalDeposits)}
           icon={<MoneyOffOutlined fontSize="small" />}
           color="#DC2626"
         />
         <SummaryCard
-          label="Deposits Pending"
-          value={summary.depositCount.toString()}
-          sub={`Bal: ${formatKsh(summary.depositBalance)}`}
-          icon={<HourglassEmptyOutlined fontSize="small" />}
+          label="Pending"
+          value={stats.pendingJobs.toString()}
+          icon={<PendingActionsOutlined fontSize="small" />}
           color="#D97706"
         />
         <SummaryCard
-          label="Completed Today"
-          value={summary.completedToday.toString()}
-          icon={<TodayOutlined fontSize="small" />}
+          label="In Progress"
+          value={stats.inProgressJobs.toString()}
+          icon={<HourglassEmptyOutlined fontSize="small" />}
           color="#2563EB"
+        />
+        <SummaryCard
+          label="Completed"
+          value={stats.completedJobs.toString()}
+          icon={<TodayOutlined fontSize="small" />}
+          color="#16A34A"
         />
       </Box>
     </Box>

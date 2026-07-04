@@ -13,8 +13,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
+import { useAuthStore } from "../auth/auth.store";
 import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
-import { INVENTORY_PRODUCTS } from "./inventory.data";
+import { useItemsQuery, useReceiveStock } from "./inventory.api";
 import type { BatchReceiveForm, StockBatchItem } from "./inventory.types";
 import { ReceiveBatchRow } from "./ReceiveBatchRow";
 
@@ -27,6 +28,7 @@ function makeEmptyItem(): StockBatchItem {
     quantity: 0,
     buyingPrice: 0,
     sellingPrice: 0,
+    status: "PENDING",
   };
 }
 
@@ -39,6 +41,9 @@ const EMPTY_FORM: BatchReceiveForm = {
 };
 
 export function ReceiveStockModal({ open, onClose }: Props) {
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
+  const { data: products = [] } = useItemsQuery(storeId);
+  const receiveStock = useReceiveStock();
   const [form, setForm] = useState<BatchReceiveForm>(EMPTY_FORM);
   // Which item row triggered the scanner — null when scanner is closed
   const [scanningItemId, setScanningItemId] = useState<string | null>(null);
@@ -75,7 +80,7 @@ export function ReceiveStockModal({ open, onClose }: Props) {
     if (!scanningItemId) return;
     setScanWarning(null);
 
-    const product = INVENTORY_PRODUCTS.find((p) => p.barcode === barcode);
+    const product = products.find((p) => p.barcode === barcode);
     if (product) {
       setForm((p) => ({
         ...p,
@@ -83,8 +88,8 @@ export function ReceiveStockModal({ open, onClose }: Props) {
           it.id === scanningItemId
             ? {
                 ...it,
-                productId: product.productId,
-                buyingPrice: product.buyingPrice,
+                productId: product.id,
+                buyingPrice: product.costPrice,
                 sellingPrice: product.sellingPrice,
               }
             : it,
@@ -98,9 +103,24 @@ export function ReceiveStockModal({ open, onClose }: Props) {
   }
 
   function handleSubmit() {
-    // TODO: call inventory API — each item becomes a separate batch record
-    console.log("Receive stock batch:", form);
-    handleClose();
+    receiveStock.mutate(
+      {
+        storeId,
+        supplier: form.supplier,
+        expectedDate: form.dateReceived,
+        trackingRef: "",
+        notes: form.notes,
+        createdBy: form.receivedBy,
+        items: form.items.map((it) => ({
+          productId: it.productId,
+          quantity: it.quantity,
+          buyingPrice: it.buyingPrice,
+          sellingPrice: it.sellingPrice,
+          status: it.status,
+        })),
+      },
+      { onSuccess: handleClose },
+    );
   }
 
   function handleClose() {
@@ -236,7 +256,7 @@ export function ReceiveStockModal({ open, onClose }: Props) {
                   key={item.id}
                   item={item}
                   index={idx}
-                  products={INVENTORY_PRODUCTS}
+                  products={products}
                   canRemove={form.items.length > 1}
                   onScanClick={(id) => setScanningItemId(id)}
                   onChange={handleItemChange}

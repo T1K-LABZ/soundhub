@@ -1,4 +1,10 @@
 import {
+  DirectionsCarOutlined,
+  EmailOutlined,
+  PersonOutlined,
+  PhoneOutlined,
+} from "@mui/icons-material";
+import {
   Box,
   Chip,
   Divider,
@@ -31,25 +37,111 @@ export function Section({ title }: { title: string }) {
 
 // ── Customer & Vehicle ────────────────────────────────────────────────────────
 
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 0.5 }}>
+      <Box sx={{ color: "text.secondary", display: "flex", alignItems: "center" }}>
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="caption" color="text.secondary" lineHeight={1}>
+          {label}
+        </Typography>
+        <Typography variant="body2" fontWeight={500} noWrap>
+          {value}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
 export function CustomerSection({ job }: { job: Job }) {
   return (
-    <>
-      <Section title="Customer" />
-      <Typography variant="body2" fontWeight={600}>
-        {job.customerName}
-      </Typography>
-      <Typography variant="body2">{job.customerPhone}</Typography>
-      {job.customerEmail && (
-        <Typography variant="body2">{job.customerEmail}</Typography>
-      )}
-      <Section title="Vehicle" />
-      <Typography variant="body2" fontWeight={600}>
-        {job.carPlate}
-      </Typography>
-      <Typography variant="body2">
-        {job.carMake} {job.carModel} {job.carVariant} — {job.carYear}
-      </Typography>
-    </>
+    <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", mt: 1 }}>
+      {/* Customer card */}
+      <Box
+        sx={{
+          flex: "1 1 220px",
+          bgcolor: "grey.50",
+          borderRadius: 2,
+          p: 2,
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Typography
+          variant="overline"
+          color="text.secondary"
+          display="block"
+          mb={1}
+        >
+          Customer
+        </Typography>
+        <InfoRow
+          icon={<PersonOutlined fontSize="small" />}
+          label="Name"
+          value={job.customerName}
+        />
+        <InfoRow
+          icon={<PhoneOutlined fontSize="small" />}
+          label="Phone"
+          value={job.customerPhone}
+        />
+        {job.customerEmail && (
+          <InfoRow
+            icon={<EmailOutlined fontSize="small" />}
+            label="Email"
+            value={job.customerEmail}
+          />
+        )}
+      </Box>
+
+      {/* Vehicle card */}
+      <Box
+        sx={{
+          flex: "1 1 220px",
+          bgcolor: "grey.50",
+          borderRadius: 2,
+          p: 2,
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Typography
+          variant="overline"
+          color="text.secondary"
+          display="block"
+          mb={1}
+        >
+          Vehicle
+        </Typography>
+        <InfoRow
+          icon={<DirectionsCarOutlined fontSize="small" />}
+          label="Plate"
+          value={job.carPlate}
+        />
+        <InfoRow
+          icon={<DirectionsCarOutlined fontSize="small" />}
+          label="Make / Model"
+          value={`${job.carMake} ${job.carModel}`}
+        />
+        {(job.carVariant || job.carYear) && (
+          <InfoRow
+            icon={<DirectionsCarOutlined fontSize="small" />}
+            label="Details"
+            value={`${job.carVariant ? `${job.carVariant} — ` : ""}${job.carYear}`}
+          />
+        )}
+      </Box>
+    </Box>
   );
 }
 
@@ -72,7 +164,7 @@ export function ServicesSection({ job }: { job: Job }) {
             <TableRow key={svc.id}>
               <TableCell>{svc.name}</TableCell>
               <TableCell>{svc.code}</TableCell>
-              <TableCell align="right">{formatKsh(svc.basePrice)}</TableCell>
+              <TableCell align="right">{formatKsh(Number(svc.basePrice) || 0)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -106,8 +198,8 @@ export function ProductsSection({ job }: { job: Job }) {
               <TableRow key={i}>
                 <TableCell>{p.productName}</TableCell>
                 <TableCell align="center">{p.quantity}</TableCell>
-                <TableCell align="right">{formatKsh(p.unitPrice)}</TableCell>
-                <TableCell align="right">{formatKsh(p.lineTotal)}</TableCell>
+                <TableCell align="right">{formatKsh(Number(p.unitPrice) || 0)}</TableCell>
+                <TableCell align="right">{formatKsh(Number(p.lineTotal) || 0)}</TableCell>
               </TableRow>
             ))
           )}
@@ -120,80 +212,147 @@ export function ProductsSection({ job }: { job: Job }) {
 // ── Payment summary ───────────────────────────────────────────────────────────
 
 export function PaymentSection({ job }: { job: Job }) {
-  const depositNum = job.depositAmount ?? 0;
+  const depositNum = Number(job.depositAmount) || 0;
+  const productsSubtotal = Number(job.productsSubtotal) || 0;
+  const servicesSubtotal = Number(job.servicesSubtotal) || 0;
+  const discount = Number(job.discount) || 0;
+  const grandTotal = Number(job.grandTotal) || 0;
 
   return (
     <>
       <Divider sx={{ my: 2 }} />
       <Section title="Payment" />
+
+      {/* Grand total hero card */}
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 0.5,
-          maxWidth: 300,
+          background: "linear-gradient(135deg, #1a237e 0%, #283593 100%)",
+          borderRadius: 2,
+          p: 2.5,
+          mb: 2,
+          color: "white",
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="body2" color="text.secondary">
-            Products
-          </Typography>
-          <Typography variant="body2">
-            {formatKsh(job.productsSubtotal)}
+        <Typography variant="caption" sx={{ opacity: 0.8, mb: 0.5, display: "block" }}>
+          GRAND TOTAL
+        </Typography>
+        <Typography variant="h4" fontWeight={700}>
+          {formatKsh(grandTotal)}
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1.5, mt: 1.5 }}>
+          <Chip
+            label={job.paymentStatus}
+            size="small"
+            sx={{
+              bgcolor: "rgba(255,255,255,0.2)",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+            }}
+          />
+          <Typography variant="caption" sx={{ opacity: 0.8, alignSelf: "center" }}>
+            {job.paymentMethod}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="body2" color="text.secondary">
-            Services
-          </Typography>
-          <Typography variant="body2">
-            {formatKsh(job.servicesSubtotal)}
-          </Typography>
-        </Box>
-        {job.discount > 0 && (
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+      </Box>
+
+      {/* Discount + subtotal */}
+      <Box
+        sx={{
+          bgcolor: "grey.50",
+          borderRadius: 1.5,
+          p: 1.5,
+          border: "1px solid",
+          borderColor: "divider",
+          mb: 1.5,
+        }}
+      >
+        {discount > 0 && (
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
             <Typography variant="body2" color="text.secondary">
               Discount
             </Typography>
-            <Typography variant="body2" color="success.main">
-              −{formatKsh(job.discount)}
+            <Typography variant="body2" color="success.main" fontWeight={600}>
+              −{formatKsh(discount)}
             </Typography>
           </Box>
         )}
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography variant="body2" fontWeight={700}>
-            Grand Total
+            Subtotal
           </Typography>
           <Typography variant="body2" fontWeight={700}>
-            {formatKsh(job.grandTotal)}
+            {formatKsh(productsSubtotal + servicesSubtotal - discount)}
           </Typography>
         </Box>
-        {job.paymentStatus === "Deposit Made" && (
-          <>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" color="text.secondary">
-                Deposit Paid
-              </Typography>
-              <Typography variant="body2" color="success.main">
-                {formatKsh(depositNum)}
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography variant="body2" color="error.main" fontWeight={700}>
-                Balance Due
-              </Typography>
-              <Typography variant="body2" color="error.main" fontWeight={700}>
-                {formatKsh(job.balanceRemaining ?? 0)}
-              </Typography>
-            </Box>
-          </>
-        )}
-        <Typography variant="caption" color="text.secondary" mt={0.5}>
-          {job.paymentMethod}
-          {job.mpesaRef ? ` — Ref: ${job.mpesaRef}` : ""} ·{" "}
-          {formatJobDate(job.paymentDate)}
-        </Typography>
       </Box>
+
+      {/* Deposit & balance */}
+      {job.paymentStatus === "Deposit Made" && (
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1.5,
+            mb: 1.5,
+          }}
+        >
+          <Box
+            sx={{
+              flex: 1,
+              bgcolor: "success.light",
+              borderRadius: 1.5,
+              p: 1.5,
+              border: "1px solid",
+              borderColor: "success.main",
+            }}
+          >
+            <Typography variant="caption" color="success.dark">
+              Deposit Paid
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={700} color="success.dark">
+              {formatKsh(depositNum)}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              flex: 1,
+              bgcolor: "error.light",
+              borderRadius: 1.5,
+              p: 1.5,
+              border: "1px solid",
+              borderColor: "error.main",
+            }}
+          >
+            <Typography variant="caption" color="error.dark">
+              Balance Due
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={700} color="error.dark">
+              {formatKsh(job.balanceRemaining ?? 0)}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
+      {/* Payment ref */}
+      {(job.mpesaRef || job.paymentDate) && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            mt: 1,
+            px: 1.5,
+            py: 1,
+            bgcolor: "grey.100",
+            borderRadius: 1,
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            {job.mpesaRef ? `Ref: ${job.mpesaRef}` : ""}{" "}
+            {job.paymentDate ? `· ${formatJobDate(job.paymentDate)}` : ""}
+          </Typography>
+        </Box>
+      )}
     </>
   );
 }

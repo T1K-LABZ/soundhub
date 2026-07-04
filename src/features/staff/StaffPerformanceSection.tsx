@@ -32,25 +32,20 @@ function PodiumCard({
   label,
   name,
   value,
-  color,
 }: {
   emoji: string;
   label: string;
   name: string;
   value: string;
-  color: string;
 }) {
   return (
-    <Card
-      variant="outlined"
-      sx={{ flex: 1, borderTop: `3px solid ${color}`, textAlign: "center" }}
-    >
-      <CardContent>
-        <Typography fontSize={28}>{emoji}</Typography>
+    <Card variant="outlined" sx={{ flex: 1, textAlign: "center" }}>
+      <CardContent sx={{ py: 2, "&:last-child": { pb: 2 } }}>
+        <Typography fontSize={22}>{emoji}</Typography>
         <Typography variant="caption" color="text.secondary" display="block">
           {label}
         </Typography>
-        <Typography variant="subtitle2" fontWeight={700}>
+        <Typography variant="subtitle2" fontWeight={600}>
           {name}
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -176,14 +171,12 @@ export function StaffPerformanceSection({ staff, performances }: Props) {
               label="Most Jobs"
               name={getName(byJobs[0]?.staffId)}
               value={`${byJobs[0]?.jobsThisMonth ?? 0} jobs`}
-              color="#f59e0b"
             />
             <PodiumCard
               emoji="💰"
               label="Most Revenue"
               name={getName(byRevenue[0]?.staffId)}
               value={formatKsh(byRevenue[0]?.revenueThisMonth ?? 0)}
-              color="#22c55e"
             />
           </Box>
           <PodiumCard
@@ -194,7 +187,6 @@ export function StaffPerformanceSection({ staff, performances }: Props) {
                 ?.staffId,
             )}
             value={`${[...performances].sort((a, b) => b.avgRating - a.avgRating)[0]?.avgRating.toFixed(1) ?? "—"} / 5`}
-            color="#9333EA"
           />
         </Box>
       </Box>
