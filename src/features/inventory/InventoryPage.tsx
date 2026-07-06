@@ -4,6 +4,8 @@ import {
   CallReceivedOutlined,
   LocalShippingOutlined,
   Inventory2Outlined,
+  QrCodeScannerOutlined,
+  SearchOutlined,
 } from "@mui/icons-material";
 import {
   Box,
@@ -11,8 +13,12 @@ import {
   Chip,
   CircularProgress,
   Grid,
+  IconButton,
+  InputAdornment,
   Tab,
   Tabs,
+  TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
@@ -30,11 +36,14 @@ import { QuickReceiveModal } from "./QuickReceiveModal";
 import { ReceiveStockModal } from "./ReceiveStockModal";
 import { CreateIncomingModal } from "./CreateIncomingModal";
 import { ProductDetailModal } from "./ProductDetailModal";
+import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
 
 export function InventoryPage() {
   const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [tab, setTab] = useState(0);
   const [batchTab, setBatchTab] = useState(0);
 
@@ -86,6 +95,14 @@ export function InventoryPage() {
   const outOfStockCount = products.filter((p) => p.stockQuantity === 0).length;
   const totalIncoming = inTransitBatches.total + pendingBatches.total;
 
+  const filteredProducts = search.trim()
+    ? products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(search.toLowerCase()) ||
+          p.barcode?.toLowerCase().includes(search.toLowerCase()),
+      )
+    : products;
+
   return (
     <Box>
       <PageHeader
@@ -108,6 +125,35 @@ export function InventoryPage() {
         <Chip icon={<CallReceivedOutlined />} label={`${lowStockCount.toLocaleString()} Low Stock`} color="warning" variant="outlined" />
         <Chip icon={<Inventory2Outlined />} label={`${outOfStockCount.toLocaleString()} Out of Stock`} color="error" variant="outlined" />
         <Chip icon={<LocalShippingOutlined />} label={`${totalIncoming.toLocaleString()} Incoming`} color="info" variant="outlined" />
+      </Box>
+
+      {/* Search */}
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          placeholder="Search by name or barcode..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          sx={{ minWidth: 280 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchOutlined fontSize="small" />
+                </InputAdornment>
+              ),
+              endAdornment: search ? undefined : (
+                <InputAdornment position="end">
+                  <Tooltip title="Scan barcode to search">
+                    <IconButton size="small" onClick={() => setScannerOpen(true)}>
+                      <QrCodeScannerOutlined fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
       </Box>
 
       {/* Tabs */}
@@ -137,7 +183,7 @@ export function InventoryPage() {
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
               <CircularProgress />
             </Box>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
               <Inventory2Outlined sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />
               <Typography variant="body1" color="text.secondary">
@@ -146,7 +192,7 @@ export function InventoryPage() {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                   <ProductStockCard
                     product={product}
@@ -216,6 +262,14 @@ export function InventoryPage() {
         open={Boolean(viewProduct)}
         onClose={() => setViewProduct(null)}
         storeId={storeId}
+      />
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onDetected={(barcode) => {
+          setSearch(barcode);
+          setScannerOpen(false);
+        }}
+        onClose={() => setScannerOpen(false)}
       />
     </Box>
   );

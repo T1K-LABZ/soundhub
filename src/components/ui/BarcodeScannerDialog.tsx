@@ -119,18 +119,44 @@ export function BarcodeScannerDialog({ open, onDetected, onClose }: Props) {
           return;
         }
         setLoading(false);
-      } catch (err: unknown) {
-        if (!active) return;
-        const name = (err as { name?: string })?.name;
-        setError(
-          name === "NotAllowedError"
-            ? "Camera permission denied. Allow camera access in your browser settings, then retry."
-            : name === "NotFoundError"
-            ? "No camera found on this device."
-            : "Could not start camera. Check permissions and try again.",
-        );
-        setLoading(false);
-        await stopScanner();
+      } catch (firstErr: unknown) {
+        // Safari often rejects facingMode:"environment" on desktop which
+        // has no back camera. Retry once with any available camera.
+        try {
+          await scanner.start(
+            { facingMode: { ideal: "environment" } },
+            {
+              fps: 12,
+              qrbox: { width: 260, height: 160 },
+              aspectRatio: 1.0,
+            },
+            (decodedText) => {
+              if (!active) return;
+              onDetectedRef.current(decodedText);
+              void stopScanner();
+              onCloseRef.current();
+            },
+            () => { /* per-frame no-detection — normal */ },
+          );
+          if (!active) {
+            await stopScanner();
+            return;
+          }
+          setLoading(false);
+        } catch (secondErr: unknown) {
+          if (!active) return;
+          const name = (secondErr as { name?: string })?.name;
+          const message = (secondErr as { message?: string })?.message || String(secondErr);
+          setError(
+            name === "NotAllowedError"
+              ? "Camera permission denied. Allow camera access in your browser settings, then retry."
+              : name === "NotFoundError"
+              ? "No camera found on this device."
+              : `Camera error: ${message}`,
+          );
+          setLoading(false);
+          await stopScanner();
+        }
       }
     })();
 
