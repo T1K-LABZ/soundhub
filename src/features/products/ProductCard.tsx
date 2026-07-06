@@ -84,7 +84,7 @@ export function ProductCard({ product, onClick, onEdit }: Props) {
               In Stock
             </Typography>
             <Typography variant="h6" fontWeight={700} color="text.primary">
-              {product.stockQuantity}
+              {product.stockQuantity.toLocaleString()}
             </Typography>
           </Box>
           <Chip
@@ -109,7 +109,7 @@ export function ProductCard({ product, onClick, onEdit }: Props) {
           </Typography>
           {product.lowStockThreshold > 0 && (
             <Typography variant="caption" color="text.secondary">
-              Alert at {product.lowStockThreshold}
+              Alert at {product.lowStockThreshold.toLocaleString()}
             </Typography>
           )}
         </Box>

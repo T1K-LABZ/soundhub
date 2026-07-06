@@ -4,7 +4,6 @@ import {
   CallReceivedOutlined,
   LocalShippingOutlined,
   Inventory2Outlined,
-  SearchOutlined,
 } from "@mui/icons-material";
 import {
   Box,
@@ -12,10 +11,8 @@ import {
   Chip,
   CircularProgress,
   Grid,
-  InputAdornment,
   Tab,
   Tabs,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
@@ -38,7 +35,6 @@ export function InventoryPage() {
   const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [tab, setTab] = useState(0);
   const [batchTab, setBatchTab] = useState(0);
 
@@ -65,14 +61,14 @@ export function InventoryPage() {
     if (!storeId) return;
     setLoading(true);
     try {
-      const { data } = await getItems(storeId, search ? { search } : undefined);
+      const { data } = await getItems(storeId);
       setProducts(data.map(mapItemToProduct));
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [storeId, search]);
+  }, [storeId]);
 
   useEffect(() => {
     fetchProducts();
@@ -108,19 +104,19 @@ export function InventoryPage() {
 
       {/* Summary chips */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
-        <Chip icon={<Inventory2Outlined />} label={`${products.length} Products`} variant="outlined" />
-        <Chip icon={<CallReceivedOutlined />} label={`${lowStockCount} Low Stock`} color="warning" variant="outlined" />
-        <Chip icon={<Inventory2Outlined />} label={`${outOfStockCount} Out of Stock`} color="error" variant="outlined" />
-        <Chip icon={<LocalShippingOutlined />} label={`${totalIncoming} Incoming`} color="info" variant="outlined" />
+        <Chip icon={<Inventory2Outlined />} label={`${products.length.toLocaleString()} Products`} variant="outlined" />
+        <Chip icon={<CallReceivedOutlined />} label={`${lowStockCount.toLocaleString()} Low Stock`} color="warning" variant="outlined" />
+        <Chip icon={<Inventory2Outlined />} label={`${outOfStockCount.toLocaleString()} Out of Stock`} color="error" variant="outlined" />
+        <Chip icon={<LocalShippingOutlined />} label={`${totalIncoming.toLocaleString()} Incoming`} color="info" variant="outlined" />
       </Box>
 
       {/* Tabs */}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
-        <Tab label={`Products (${products.length})`} />
+        <Tab label={`Products (${products.length.toLocaleString()})`} />
         <Tab label={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             Incoming Stock
-            {totalIncoming > 0 && <Chip label={totalIncoming} size="small" color="info" />}
+            {totalIncoming > 0 && <Chip label={totalIncoming.toLocaleString()} size="small" color="info" />}
           </Box>
         } />
       </Tabs>
@@ -128,22 +124,6 @@ export function InventoryPage() {
       {tab === 0 && (
         <Box>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
-            <TextField
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              size="small"
-              sx={{ minWidth: 260 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchOutlined fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
             <Button variant="outlined" startIcon={<CallReceivedOutlined />} onClick={() => setBulkReceiveOpen(true)}>
               Receive Stock
             </Button>
@@ -188,19 +168,19 @@ export function InventoryPage() {
             <Tab label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 In Transit
-                {inTransitBatches.total > 0 && <Chip label={inTransitBatches.total} size="small" color="info" />}
+                {inTransitBatches.total > 0 && <Chip label={inTransitBatches.total.toLocaleString()} size="small" color="info" />}
               </Box>
             } />
             <Tab label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 Pending
-                {pendingBatches.total > 0 && <Chip label={pendingBatches.total} size="small" color="warning" />}
+                {pendingBatches.total > 0 && <Chip label={pendingBatches.total.toLocaleString()} size="small" color="warning" />}
               </Box>
             } />
             <Tab label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 Active
-                {activeBatches.total > 0 && <Chip label={activeBatches.total} size="small" color="success" />}
+                {activeBatches.total > 0 && <Chip label={activeBatches.total.toLocaleString()} size="small" color="success" />}
               </Box>
             } />
           </Tabs>

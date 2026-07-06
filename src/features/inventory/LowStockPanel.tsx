@@ -49,7 +49,7 @@ export function LowStockPanel({ products }: Props) {
             fontSize="small"
           />
           <Typography variant="subtitle2" fontWeight={700}>
-            Stock Alerts — {alerts.length} item{alerts.length !== 1 ? "s" : ""}{" "}
+            Stock Alerts — {alerts.length.toLocaleString()} item{alerts.length !== 1 ? "s" : ""}{" "}
             need attention
           </Typography>
         </Box>
@@ -113,7 +113,7 @@ export function LowStockPanel({ products }: Props) {
                     color="text.secondary"
                     sx={{ minWidth: 80, textAlign: "right" }}
                   >
-                    {product.quantityOnHand} / {product.reorderPoint} threshold
+                    {product.quantityOnHand.toLocaleString()} / {product.reorderPoint.toLocaleString()} threshold
                   </Typography>
                 </Box>
               </Box>

@@ -1,13 +1,16 @@
-import { SearchOutlined } from "@mui/icons-material";
+import { FilterListOutlined, QrCodeScannerOutlined, SearchOutlined } from "@mui/icons-material";
 import {
   Box,
+  Button,
   CircularProgress,
   Grid,
+  IconButton,
   InputAdornment,
   MenuItem,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
@@ -16,8 +19,9 @@ import { PageHeader } from "../../components/ui/PageHeader";
 import { ProductCard } from "./ProductCard";
 import { AVAILABILITY_OPTIONS, PRICE_RANGES } from "./products.constants";
 import type { AvailabilityFilter, Category, Product } from "./products.types";
-import { getItems, getCategories, mapItemToProduct } from "./products.api";
+import { getCategories, getItems, mapItemToProduct } from "./products.api";
 import { filterProducts } from "./products.utils";
+import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
 
 export function ProductsPage() {
   const storeId = useAuthStore((s) => s.user?.storeId);
@@ -27,11 +31,12 @@ export function ProductsPage() {
 
   // Filter state
   const [search, setSearch] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [category, setCategory] = useState("all");
   const [availability, setAvailability] = useState<AvailabilityFilter>("all");
   const [priceRangeIdx, setPriceRangeIdx] = useState(0);
 
-  // Modal state
   const selectedRange = PRICE_RANGES[priceRangeIdx];
 
   const fetchProducts = useCallback(async () => {
@@ -67,10 +72,10 @@ export function ProductsPage() {
 
   const filtered = filterProducts(products, {
     search,
-    category,
-    availability,
-    priceMin: selectedRange.min,
-    priceMax: selectedRange.max,
+    category: showFilters ? category : "all",
+    availability: showFilters ? availability : "all",
+    priceMin: showFilters ? selectedRange.min : 0,
+    priceMax: showFilters ? selectedRange.max : Number.POSITIVE_INFINITY,
   });
 
   return (
@@ -92,53 +97,75 @@ export function ProductsPage() {
                   <SearchOutlined fontSize="small" />
                 </InputAdornment>
               ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip title="Scan barcode to search">
+                    <IconButton size="small" onClick={() => setScannerOpen(true)}>
+                      <QrCodeScannerOutlined fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              ),
             },
           }}
         />
 
-        <TextField
-          select
-          label="Category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          size="small"
-          sx={{ minWidth: 160 }}
+        <Button
+          variant={showFilters ? "contained" : "outlined"}
+          startIcon={<FilterListOutlined />}
+          onClick={() => setShowFilters((visible) => !visible)}
+          sx={{ textTransform: "none" }}
         >
-          <MenuItem value="all">All Categories</MenuItem>
-          {categories.map((cat) => (
-            <MenuItem key={cat.id} value={cat.name}>
-              {cat.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          {showFilters ? "Hide filters" : "Show filters"}
+        </Button>
 
-        <TextField
-          select
-          label="Price Range"
-          value={priceRangeIdx}
-          onChange={(e) => setPriceRangeIdx(Number(e.target.value))}
-          size="small"
-          sx={{ minWidth: 200 }}
-        >
-          {PRICE_RANGES.map((range, idx) => (
-            <MenuItem key={idx} value={idx}>
-              {range.label}
-            </MenuItem>
-          ))}
-        </TextField>
+        {showFilters && (
+          <>
+            <TextField
+              select
+              label="Category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              size="small"
+              sx={{ minWidth: 160 }}
+            >
+              <MenuItem value="all">All Categories</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.name}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </TextField>
 
-        <ToggleButtonGroup
-          value={availability}
-          exclusive
-          onChange={(_, val) => val && setAvailability(val)}
-          size="small"
-        >
-          {AVAILABILITY_OPTIONS.map((opt) => (
-            <ToggleButton key={opt.value} value={opt.value}>
-              {opt.label}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+            <TextField
+              select
+              label="Price Range"
+              value={priceRangeIdx}
+              onChange={(e) => setPriceRangeIdx(Number(e.target.value))}
+              size="small"
+              sx={{ minWidth: 200 }}
+            >
+              {PRICE_RANGES.map((range, idx) => (
+                <MenuItem key={idx} value={idx}>
+                  {range.label}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <ToggleButtonGroup
+              value={availability}
+              exclusive
+              onChange={(_, val) => val && setAvailability(val)}
+              size="small"
+            >
+              {AVAILABILITY_OPTIONS.map((opt) => (
+                <ToggleButton key={opt.value} value={opt.value}>
+                  {opt.label}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </>
+        )}
       </Box>
 
       {/* ── Product grid ───────────────────────────────────────────────────── */}
@@ -149,7 +176,7 @@ export function ProductsPage() {
       ) : filtered.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 8 }}>
           <Typography variant="body1" color="text.secondary">
-            No products match your filters
+            No products match your {showFilters ? "filters" : "search"}
           </Typography>
         </Box>
       ) : (
@@ -161,6 +188,14 @@ export function ProductsPage() {
           ))}
         </Grid>
       )}
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onDetected={(barcode) => {
+          setSearch(barcode);
+          setScannerOpen(false);
+        }}
+        onClose={() => setScannerOpen(false)}
+      />
     </Box>
   );
 }

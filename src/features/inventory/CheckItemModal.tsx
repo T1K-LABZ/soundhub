@@ -156,7 +156,7 @@ export function CheckItemModal({ open, onClose }: Props) {
                           variant="outlined"
                         />
                         <Typography variant="caption" color="text.secondary">
-                          {item.quantityOnHand} on hand
+                          {item.quantityOnHand.toLocaleString()} on hand
                         </Typography>
                       </Box>
                     </ListItem>

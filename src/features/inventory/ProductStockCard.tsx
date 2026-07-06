@@ -69,7 +69,7 @@ export function ProductStockCard({ product, onEdit, onReceive, onClick }: Props)
         />
         {/* Stock badge overlay */}
         <Chip
-          label={status === "out" ? "Out of Stock" : `${product.stockQuantity} units`}
+          label={status === "out" ? "Out of Stock" : `${product.stockQuantity.toLocaleString()} units`}
           color={stockColor}
           size="small"
           sx={{
@@ -99,7 +99,7 @@ export function ProductStockCard({ product, onEdit, onReceive, onClick }: Props)
               Stock Level
             </Typography>
             <Typography variant="caption" fontWeight={600}>
-              {product.stockQuantity}
+              {product.stockQuantity.toLocaleString()}
             </Typography>
           </Box>
           <LinearProgress
@@ -112,7 +112,7 @@ export function ProductStockCard({ product, onEdit, onReceive, onClick }: Props)
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
               <WarningAmberOutlined sx={{ fontSize: 14, color: "warning.main" }} />
               <Typography variant="caption" color="warning.main" fontWeight={500}>
-                Low stock — alert at {product.lowStockThreshold}
+                Low stock — alert at {product.lowStockThreshold.toLocaleString()}
               </Typography>
             </Box>
           )}

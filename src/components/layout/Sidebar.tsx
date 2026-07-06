@@ -275,6 +275,10 @@ export function Sidebar({
     borderColor: "divider",
     transition: "width 0.3s ease",
     width: drawerWidth,
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+    overflow: "auto",
   };
 
   return (
@@ -292,11 +296,12 @@ export function Sidebar({
         onClose={onClose}
         open={mobileOpen}
         sx={{ display: { xs: "block", md: "none" } }}
-        slotProps={{ paper: { sx: { width: 260 } } }}
+        slotProps={{ paper: { sx: { width: collapsed ? 72 : 260, display: "flex", flexDirection: "column", height: "100vh", transition: "width 0.3s ease" } } }}
       >
-        <SidebarLogo collapsed={false} />
-        <NavItems collapsed={false} onClose={onClose} />
-        <LogoutButton collapsed={false} />
+        <SidebarLogo collapsed={collapsed} />
+        <NavItems collapsed={collapsed} onClose={onClose} />
+        <CollapseToggle collapsed={collapsed} onToggle={onToggle} />
+        <LogoutButton collapsed={collapsed} />
       </Drawer>
 
       <Drawer

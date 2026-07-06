@@ -126,7 +126,7 @@ function BatchCard({ batch, storeId }: { batch: BatchItem; storeId: string }) {
                 {batch.product?.name || "Unknown Product"}
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" noWrap>
-                {batch.supplier} · {batch.quantityReceived} units
+                {batch.supplier} · {batch.quantityReceived.toLocaleString()} units
               </Typography>
             </Box>
 

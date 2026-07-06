@@ -58,7 +58,7 @@ export function InventoryMovementCard({
               fontWeight={700}
               color={movement.quantity > 0 ? "success.main" : "error.main"}
             >
-              {movement.quantity > 0 ? `+${movement.quantity}` : movement.quantity}
+              {movement.quantity > 0 ? `+${movement.quantity.toLocaleString()}` : movement.quantity.toLocaleString()}
             </Typography>
             {expanded ? (
               <ExpandLessOutlined fontSize="small" color="action" />
@@ -109,7 +109,7 @@ export function InventoryMovementCard({
               Balance
             </Typography>
             <Typography variant="body2" fontWeight={600}>
-              {movement.runningBalance}
+              {movement.runningBalance.toLocaleString()}
             </Typography>
           </Box>
         </Box>

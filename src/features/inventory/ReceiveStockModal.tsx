@@ -283,7 +283,7 @@ export function ReceiveStockModal({ open, onClose }: Props) {
                   Total Units
                 </Typography>
                 <Typography variant="subtitle2" fontWeight={700}>
-                  {totalUnits}
+                  {totalUnits.toLocaleString()}
                 </Typography>
               </Box>
               <Box>
@@ -299,7 +299,7 @@ export function ReceiveStockModal({ open, onClose }: Props) {
                   Items
                 </Typography>
                 <Typography variant="subtitle2" fontWeight={700}>
-                  {form.items.length}
+                  {form.items.length.toLocaleString()}
                 </Typography>
               </Box>
             </Box>

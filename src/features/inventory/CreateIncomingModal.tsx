@@ -267,7 +267,7 @@ export function CreateIncomingModal({ open, onClose }: Props) {
             >
               <Box>
                 <Typography variant="caption" color="text.secondary">Total Units</Typography>
-                <Typography variant="subtitle2" fontWeight={700}>{totalUnits}</Typography>
+                <Typography variant="subtitle2" fontWeight={700}>{totalUnits.toLocaleString()}</Typography>
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">Cost Value</Typography>
@@ -279,7 +279,7 @@ export function CreateIncomingModal({ open, onClose }: Props) {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">Items</Typography>
-                <Typography variant="subtitle2" fontWeight={700}>{form.items.length}</Typography>
+                <Typography variant="subtitle2" fontWeight={700}>{form.items.length.toLocaleString()}</Typography>
               </Box>
             </Box>
           )}
