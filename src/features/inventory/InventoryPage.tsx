@@ -26,7 +26,7 @@ import { useAuthStore } from "../auth/auth.store";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { AddProductModal } from "../products/AddProductModal";
 import { CategoryModal } from "../products/CategoryModal";
-import { getItems, mapItemToProduct } from "../products/products.api";
+import { getItemByBarcode, getItems, mapItemToProduct } from "../products/products.api";
 import type { Product } from "../products/products.types";
 import { useBatchesQuery } from "./inventory.api";
 import type { BatchItem } from "./inventory.api";
@@ -257,9 +257,14 @@ export function InventoryPage() {
       />
       <BarcodeScannerDialog
         open={scannerOpen}
-        onDetected={(barcode) => {
-          setSearch(barcode);
+        onDetected={async (barcode) => {
           setScannerOpen(false);
+          if (storeId) {
+            const item = await getItemByBarcode(storeId, barcode);
+            setSearch(item ? item.name : barcode);
+          } else {
+            setSearch(barcode);
+          }
         }}
         onClose={() => setScannerOpen(false)}
       />

@@ -19,7 +19,7 @@ import { PageHeader } from "../../components/ui/PageHeader";
 import { ProductCard } from "./ProductCard";
 import { AVAILABILITY_OPTIONS, PRICE_RANGES } from "./products.constants";
 import type { AvailabilityFilter, Category, Product } from "./products.types";
-import { getCategories, getItems, mapItemToProduct } from "./products.api";
+import { getCategories, getItemByBarcode, getItems, mapItemToProduct } from "./products.api";
 import { filterProducts } from "./products.utils";
 import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
 
@@ -190,9 +190,15 @@ export function ProductsPage() {
       )}
       <BarcodeScannerDialog
         open={scannerOpen}
-        onDetected={(barcode) => {
-          setSearch(barcode);
+        onDetected={async (barcode) => {
           setScannerOpen(false);
+          // Try exact barcode match first, then fall back to general search
+          if (storeId) {
+            const item = await getItemByBarcode(storeId, barcode);
+            setSearch(item ? item.name : barcode);
+          } else {
+            setSearch(barcode);
+          }
         }}
         onClose={() => setScannerOpen(false)}
       />

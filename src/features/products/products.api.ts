@@ -92,6 +92,19 @@ export function mapItemToProduct(item: InventoryItemResponse): Product {
   }
 }
 
+// ── Barcode Lookup ───────────────────────────────────────────────────────────
+
+export async function getItemByBarcode(
+  storeId: string,
+  barcode: string,
+): Promise<InventoryItemResponse | null> {
+  const response = await apiClient.get<ApiResponse<InventoryItemResponse>>(
+    '/inventory/price-by-barcode',
+    { params: { storeId, barcode } },
+  )
+  return response.data.data ?? null
+}
+
 // ── Categories ──────────────────────────────────────────────────────────────
 
 export async function getCategories(

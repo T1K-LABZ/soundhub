@@ -140,7 +140,10 @@ export function ProductStockCard({ product, onEdit, onReceive, onClick }: Props)
           <Tooltip title="Edit Product">
             <IconButton
               size="small"
-              onClick={() => onEdit(product)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(product);
+              }}
               sx={{ color: "text.secondary", "&:hover": { color: "primary.main" } }}
             >
               <EditOutlined fontSize="small" />
@@ -149,7 +152,10 @@ export function ProductStockCard({ product, onEdit, onReceive, onClick }: Props)
           <Tooltip title="Receive Stock">
             <IconButton
               size="small"
-              onClick={() => onReceive(product)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onReceive(product);
+              }}
               sx={{ color: "text.secondary", "&:hover": { color: "success.main" } }}
             >
               <CallReceivedOutlined fontSize="small" />
