@@ -131,6 +131,7 @@ export async function updateCategory(
   return response.data.data
 }
 
+
 export async function deleteCategory(
   categoryId: string,
   storeId: string,
