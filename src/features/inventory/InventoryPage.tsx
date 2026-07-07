@@ -70,14 +70,14 @@ export function InventoryPage() {
     if (!storeId) return;
     setLoading(true);
     try {
-      const { data } = await getItems(storeId);
+      const { data } = await getItems(storeId, search ? { search } : undefined);
       setProducts(data.map(mapItemToProduct));
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [storeId]);
+  }, [storeId, search]);
 
   useEffect(() => {
     fetchProducts();
@@ -94,14 +94,6 @@ export function InventoryPage() {
   ).length;
   const outOfStockCount = products.filter((p) => p.stockQuantity === 0).length;
   const totalIncoming = inTransitBatches.total + pendingBatches.total;
-
-  const filteredProducts = search.trim()
-    ? products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(search.toLowerCase()) ||
-          p.barcode?.toLowerCase().includes(search.toLowerCase()),
-      )
-    : products;
 
   return (
     <Box>
@@ -183,7 +175,7 @@ export function InventoryPage() {
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
               <CircularProgress />
             </Box>
-          ) : filteredProducts.length === 0 ? (
+          ) : products.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
               <Inventory2Outlined sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />
               <Typography variant="body1" color="text.secondary">
@@ -192,7 +184,7 @@ export function InventoryPage() {
             </Box>
           ) : (
             <Grid container spacing={3}>
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                   <ProductStockCard
                     product={product}
