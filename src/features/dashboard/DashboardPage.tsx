@@ -24,12 +24,12 @@ import { CheckItemModal } from "../inventory/CheckItemModal";
 import { AddProductModal } from "../products/AddProductModal";
 import { NewSaleModal } from "../sales/NewSaleModal";
 import { useAuthStore } from "../auth/auth.store";
-import { DASHBOARD_STATS, RECENT_ACTIVITY } from "./dashboard.data";
+import { useDashboardQuery } from "./dashboard.api";
 import {
-  ACTIVITY_STATUS_COLOR,
   AVATAR_COLORS,
   AVATAR_TEXT_COLORS,
-  getAvatarInitials,
+  getMovementLabel,
+  MOVEMENT_STATUS_COLOR,
 } from "./dashboard.constants";
 
 const STAT_ICONS: Record<string, React.ReactNode> = {
@@ -43,7 +43,42 @@ type Modal = "sale" | "product" | "inventory" | null;
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
+  const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
   const [openModal, setOpenModal] = useState<Modal>(null);
+
+  const { data: dashboardData, isLoading } = useDashboardQuery(storeId);
+
+  const stats = dashboardData?.data;
+
+  const dashboardStats = stats
+    ? [
+        {
+          label: "Total Products",
+          value: stats.totalProducts.toLocaleString(),
+          color: "#F70000",
+        },
+        {
+          label: "Items in Stock",
+          value: stats.totalItemsInStock.toLocaleString(),
+          color: "#2563EB",
+        },
+        {
+          label: "Today's Sales",
+          value: stats.totalSalesToday.toLocaleString(),
+          color: "#16A34A",
+        },
+        {
+          label: "Today's Revenue",
+          value: `KSh ${stats.todayRevenue.toLocaleString()}`,
+          color: "#9333EA",
+        },
+      ]
+    : [
+        { label: "Total Products", value: "0", color: "#F70000" },
+        { label: "Items in Stock", value: "0", color: "#2563EB" },
+        { label: "Today's Sales", value: "0", color: "#16A34A" },
+        { label: "Today's Revenue", value: "KSh 0", color: "#9333EA" },
+      ];
 
   return (
     <Box>
@@ -87,7 +122,7 @@ export function DashboardPage() {
 
       {/* Stat cards */}
       <Grid container spacing={2.5} sx={{ mb: 4 }}>
-        {DASHBOARD_STATS.map((stat) => (
+        {dashboardStats.map((stat) => (
           <Grid key={stat.label} size={{ xs: 12, sm: 6, lg: 3 }}>
             <StatCard
               label={stat.label}
@@ -108,52 +143,67 @@ export function DashboardPage() {
           Recent Activity
         </Typography>
         <List disablePadding>
-          {RECENT_ACTIVITY.map((item, idx) => (
-            <Box key={item.id}>
-              <ListItem disablePadding sx={{ py: 1.5 }}>
-                <ListItemAvatar>
-                  <Avatar
-                    sx={{
-                      bgcolor: AVATAR_COLORS[item.action],
-                      color: AVATAR_TEXT_COLORS[item.action],
-                      fontSize: 13,
-                      height: 36,
-                      width: 36,
+          {stats?.recentMovements.map((movement, idx) => {
+            const movementType = movement.type as "SALE" | "RECEIVE" | "ADJUSTMENT";
+            return (
+              <Box key={movement.id}>
+                <ListItem disablePadding sx={{ py: 1.5 }}>
+                  <ListItemAvatar>
+                    <Avatar
+                      sx={{
+                        bgcolor: AVATAR_COLORS[movementType],
+                        color: AVATAR_TEXT_COLORS[movementType],
+                        fontSize: 13,
+                        height: 36,
+                        width: 36,
+                      }}
+                    >
+                      {getMovementLabel(movementType)}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={movement.product.name}
+                    secondary={new Date(movement.createdAt).toLocaleString()}
+                    slotProps={{
+                      primary: {
+                        style: { fontSize: "0.875rem", fontWeight: 500 },
+                      },
+                      secondary: { style: { fontSize: "0.75rem" } },
                     }}
-                  >
-                    {getAvatarInitials(item.product)}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={item.product}
-                  secondary={item.time}
-                  slotProps={{
-                    primary: {
-                      style: { fontSize: "0.875rem", fontWeight: 500 },
-                    },
-                    secondary: { style: { fontSize: "0.75rem" } },
-                  }}
-                />
-                <Box
-                  sx={{ alignItems: "center", display: "flex", gap: 1.5 }}
-                >
-                  <Chip
-                    color={ACTIVITY_STATUS_COLOR[item.action]}
-                    label={item.action}
-                    size="small"
                   />
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ minWidth: 60, textAlign: "right" }}
+                  <Box
+                    sx={{ alignItems: "center", display: "flex", gap: 1.5 }}
                   >
-                    {item.amount}
-                  </Typography>
-                </Box>
-              </ListItem>
-              {idx < RECENT_ACTIVITY.length - 1 && <Divider />}
-            </Box>
-          ))}
+                    <Chip
+                      color={MOVEMENT_STATUS_COLOR[movementType]}
+                      label={getMovementLabel(movementType)}
+                      size="small"
+                    />
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ minWidth: 60, textAlign: "right" }}
+                    >
+                      {movementType === "SALE"
+                        ? `-${movement.quantity} units`
+                        : `+${movement.quantity} units`}
+                    </Typography>
+                  </Box>
+                </ListItem>
+                {stats.recentMovements.length > 0 &&
+                  idx < stats.recentMovements.length - 1 && <Divider />}
+              </Box>
+            );
+          })}
+          {stats?.recentMovements.length === 0 && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ py: 3, textAlign: "center" }}
+            >
+              No recent activity
+            </Typography>
+          )}
         </List>
       </Paper>
 

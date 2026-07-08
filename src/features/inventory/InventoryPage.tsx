@@ -15,19 +15,20 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  MenuItem,
   Tab,
   Tabs,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../auth/auth.store";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { AddProductModal } from "../products/AddProductModal";
 import { CategoryModal } from "../products/CategoryModal";
-import { getItemByBarcode, getItems, mapItemToProduct } from "../products/products.api";
-import type { Product } from "../products/products.types";
+import { getCategories, getItemByBarcode, getItems, mapItemToProduct } from "../products/products.api";
+import type { Category, Product } from "../products/products.types";
 import { useBatchesQuery } from "./inventory.api";
 import type { BatchItem } from "./inventory.api";
 import { ProductStockCard } from "./ProductStockCard";
@@ -38,16 +39,24 @@ import { CreateIncomingModal } from "./CreateIncomingModal";
 import { ProductDetailModal } from "./ProductDetailModal";
 import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
 
+const PAGE_SIZE = 24;
+
 export function InventoryPage() {
   const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [tab, setTab] = useState(0);
   const [batchTab, setBatchTab] = useState(0);
 
-  // Modal state
   const [addProductOpen, setAddProductOpen] = useState(false);
   const [editProductId, setEditProductId] = useState<string | null>(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
@@ -56,37 +65,77 @@ export function InventoryPage() {
   const [createIncomingOpen, setCreateIncomingOpen] = useState(false);
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
 
-  // Determine modal mode
   const isEditing = Boolean(editProductId);
   const productModalOpen = addProductOpen || isEditing;
   const editingProduct = editProductId ? products.find((p) => p.id === editProductId) ?? null : null;
 
-  // Batch queries
   const { data: inTransitBatches = { items: [], total: 0 } } = useBatchesQuery(storeId, "IN_TRANSIT");
   const { data: pendingBatches = { items: [], total: 0 } } = useBatchesQuery(storeId, "PENDING");
   const { data: activeBatches = { items: [], total: 0 } } = useBatchesQuery(storeId, "ACTIVE");
 
-  const fetchProducts = useCallback(async () => {
+  const searchRef = useRef(search);
+  useEffect(() => { searchRef.current = search; });
+
+  const loadPage = useCallback(async (pageNum: number, append: boolean) => {
     if (!storeId) return;
-    setLoading(true);
+    if (!append) setLoading(true);
+    else setLoadingMore(true);
     try {
-      const { data } = await getItems(storeId, search ? { search } : undefined);
-      setProducts(data.map(mapItemToProduct));
+      const { data } = await getItems(storeId, {
+        search: searchRef.current || undefined,
+        page: pageNum,
+        pageSize: PAGE_SIZE,
+      });
+      const mapped = data.map(mapItemToProduct);
+      if (append) {
+        setProducts((prev) => [...prev, ...mapped]);
+      } else {
+        setProducts(mapped);
+      }
+      setHasMore(mapped.length === PAGE_SIZE);
     } catch {
       // ignore
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [storeId, search]);
+  }, [storeId]);
 
+  // Fetch page 1 when search changes or on mount
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    setPage(1);
+    setProducts([]);
+    setHasMore(true);
+    loadPage(1, false);
+  }, [search, loadPage]);
+
+  // Fetch categories for the filter dropdown
+  useEffect(() => {
+    if (!storeId) return;
+    getCategories(storeId)
+      .then(({ data }) => {
+        setCategories(data.map((c) => ({ id: c.id, name: c.name })));
+      })
+      .catch(() => {});
+  }, [storeId]);
+
+  function refreshProducts() {
+    setPage(1);
+    setProducts([]);
+    setHasMore(true);
+    loadPage(1, false);
+  }
+
+  function handleLoadMore() {
+    const next = page + 1;
+    setPage(next);
+    loadPage(next, true);
+  }
 
   function handleQuickReceive(productId: string, quantity: number) {
     console.log("Quick receive:", { productId, quantity });
     setReceiveProduct(null);
-    fetchProducts();
+    refreshProducts();
   }
 
   const lowStockCount = products.filter(
@@ -94,6 +143,14 @@ export function InventoryPage() {
   ).length;
   const outOfStockCount = products.filter((p) => p.stockQuantity === 0).length;
   const totalIncoming = inTransitBatches.total + pendingBatches.total;
+
+  const displayedProducts = products.filter((p) => {
+    if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
+    if (stockFilter === "low" && (p.stockQuantity === 0 || p.stockQuantity > p.lowStockThreshold)) return false;
+    if (stockFilter === "out" && p.stockQuantity !== 0) return false;
+    if (stockFilter === "in" && p.stockQuantity === 0) return false;
+    return true;
+  });
 
   return (
     <Box>
@@ -111,7 +168,6 @@ export function InventoryPage() {
         }
       />
 
-      {/* Summary chips */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
         <Chip icon={<Inventory2Outlined />} label={`${products.length.toLocaleString()} Products`} variant="outlined" />
         <Chip icon={<CallReceivedOutlined />} label={`${lowStockCount.toLocaleString()} Low Stock`} color="warning" variant="outlined" />
@@ -119,8 +175,7 @@ export function InventoryPage() {
         <Chip icon={<LocalShippingOutlined />} label={`${totalIncoming.toLocaleString()} Incoming`} color="info" variant="outlined" />
       </Box>
 
-      {/* Search */}
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
         <TextField
           placeholder="Search by name or barcode..."
           value={search}
@@ -146,9 +201,36 @@ export function InventoryPage() {
             },
           }}
         />
+        <TextField
+          select
+          label="Category"
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          size="small"
+          sx={{ minWidth: 160 }}
+        >
+          <MenuItem value="all">All Categories</MenuItem>
+          {categories.map((cat) => (
+            <MenuItem key={cat.id} value={cat.name}>
+              {cat.name}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          select
+          label="Stock Status"
+          value={stockFilter}
+          onChange={(e) => setStockFilter(e.target.value)}
+          size="small"
+          sx={{ minWidth: 160 }}
+        >
+          <MenuItem value="all">All Stock</MenuItem>
+          <MenuItem value="in">In Stock</MenuItem>
+          <MenuItem value="low">Low Stock</MenuItem>
+          <MenuItem value="out">Out of Stock</MenuItem>
+        </TextField>
       </Box>
 
-      {/* Tabs */}
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
         <Tab label={`Products (${products.length.toLocaleString()})`} />
         <Tab label={
@@ -170,12 +252,11 @@ export function InventoryPage() {
             </Button>
           </Box>
 
-          {/* Product grid */}
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
               <CircularProgress />
             </Box>
-          ) : products.length === 0 ? (
+          ) : displayedProducts.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
               <Inventory2Outlined sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />
               <Typography variant="body1" color="text.secondary">
@@ -183,23 +264,38 @@ export function InventoryPage() {
               </Typography>
             </Box>
           ) : (
-            <Grid container spacing={3}>
-              {products.map((product) => (
-                <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                  <ProductStockCard
-                    product={product}
-                    onEdit={(p) => setEditProductId(p.id)}
-                    onReceive={(p) => setReceiveProduct(p)}
-                    onClick={(p) => setViewProduct(p)}
-                  />
-                </Grid>
-              ))}
-            </Grid>
+            <>
+              <Grid container spacing={3}>
+                {displayedProducts.map((product) => (
+                  <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                    <ProductStockCard
+                      product={product}
+                      onEdit={(p) => setEditProductId(p.id)}
+                      onReceive={(p) => setReceiveProduct(p)}
+                      onClick={(p) => setViewProduct(p)}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+
+              {hasMore && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 4, mb: 2 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    sx={{ textTransform: "none", minWidth: 200 }}
+                  >
+                    {loadingMore ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+                    {loadingMore ? "Loading…" : "Next Page"}
+                  </Button>
+                </Box>
+              )}
+            </>
           )}
         </Box>
       )}
 
-      {/* Tab 1: Incoming Stock */}
       {tab === 1 && (
         <Box>
           <Tabs value={batchTab} onChange={(_, v) => setBatchTab(v)} sx={{ mb: 2 }}>
@@ -229,13 +325,12 @@ export function InventoryPage() {
         </Box>
       )}
 
-      {/* Modals */}
       <AddProductModal
         open={productModalOpen}
         onClose={() => {
           setAddProductOpen(false);
           setEditProductId(null);
-          fetchProducts();
+          refreshProducts();
         }}
         productId={editProductId ?? undefined}
         product={editingProduct}

@@ -23,13 +23,17 @@ import { getCategories, getItemByBarcode, getItems, mapItemToProduct } from "./p
 import { filterProducts } from "./products.utils";
 import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
 
+const PAGE_SIZE = 24;
+
 export function ProductsPage() {
   const storeId = useAuthStore((s) => s.user?.storeId);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  // Filter state
   const [search, setSearch] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -39,18 +43,38 @@ export function ProductsPage() {
 
   const selectedRange = PRICE_RANGES[priceRangeIdx];
 
-  const fetchProducts = useCallback(async () => {
+  const loadPage = useCallback(async (pageNum: number, append: boolean) => {
     if (!storeId) return;
-    setLoading(true);
+    if (!append) setLoading(true);
+    else setLoadingMore(true);
     try {
-      const { data } = await getItems(storeId, search ? { search } : undefined);
-      setProducts(data.map(mapItemToProduct));
+      const { data } = await getItems(storeId, {
+        search: search || undefined,
+        page: pageNum,
+        pageSize: PAGE_SIZE,
+      });
+      const mapped = data.map(mapItemToProduct);
+      if (append) {
+        setProducts((prev) => [...prev, ...mapped]);
+      } else {
+        setProducts(mapped);
+      }
+      setHasMore(mapped.length === PAGE_SIZE);
     } catch {
       // ignore
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [storeId, search]);
+
+  // Fetch page 1 whenever search changes, resetting previous results.
+  useEffect(() => {
+    setPage(1);
+    setProducts([]);
+    setHasMore(true);
+    loadPage(1, false);
+  }, [loadPage]);
 
   const fetchCategories = useCallback(async () => {
     if (!storeId) return;
@@ -63,12 +87,14 @@ export function ProductsPage() {
   }, [storeId]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
-  useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  function handleLoadMore() {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    loadPage(nextPage, true);
+  }
 
   const filtered = filterProducts(products, {
     search,
@@ -82,7 +108,6 @@ export function ProductsPage() {
     <Box>
       <PageHeader subtitle="Browse your product catalog" />
 
-      {/* ── Filters ────────────────────────────────────────────────────────── */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
         <TextField
           placeholder="Search products..."
@@ -168,7 +193,6 @@ export function ProductsPage() {
         )}
       </Box>
 
-      {/* ── Product grid ───────────────────────────────────────────────────── */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
           <CircularProgress />
@@ -180,19 +204,34 @@ export function ProductsPage() {
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={3}>
-          {filtered.map((product) => (
-            <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-              <ProductCard product={product} onClick={() => {}} />
-            </Grid>
-          ))}
-        </Grid>
+        <>
+          <Grid container spacing={3}>
+            {filtered.map((product) => (
+              <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                <ProductCard product={product} onClick={() => {}} />
+              </Grid>
+            ))}
+          </Grid>
+
+          {hasMore && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4, mb: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                sx={{ textTransform: "none", minWidth: 200 }}
+              >
+                {loadingMore ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+                {loadingMore ? "Loading…" : "Next Page"}
+              </Button>
+            </Box>
+          )}
+        </>
       )}
       <BarcodeScannerDialog
         open={scannerOpen}
         onDetected={async (barcode) => {
           setScannerOpen(false);
-          // Try exact barcode match first, then fall back to general search
           if (storeId) {
             const item = await getItemByBarcode(storeId, barcode);
             setSearch(item ? item.name : barcode);
