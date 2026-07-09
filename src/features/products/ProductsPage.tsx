@@ -1,15 +1,21 @@
-import { FilterListOutlined, QrCodeScannerOutlined, SearchOutlined } from "@mui/icons-material";
+import {
+  FilterListOutlined,
+  Inventory2Outlined,
+  QrCodeScannerOutlined,
+  SearchOutlined,
+  WarningAmberOutlined,
+} from "@mui/icons-material";
 import {
   Box,
   Button,
+  Chip,
   CircularProgress,
   Grid,
   IconButton,
   InputAdornment,
   MenuItem,
+  Paper,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -17,10 +23,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "../auth/auth.store";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { ProductCard } from "./ProductCard";
-import { AVAILABILITY_OPTIONS, PRICE_RANGES } from "./products.constants";
+import { PRICE_RANGES } from "./products.constants";
 import type { AvailabilityFilter, Category, Product } from "./products.types";
 import { getCategories, getItemByBarcode, getItems, mapItemToProduct } from "./products.api";
-import { filterProducts } from "./products.utils";
+import { filterProducts, getStockStatus } from "./products.utils";
 import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
 
 const PAGE_SIZE = 24;
@@ -96,63 +102,153 @@ export function ProductsPage() {
     loadPage(nextPage, true);
   }
 
+  function handleAvailabilityClick(value: AvailabilityFilter) {
+    setAvailability(value);
+  }
+
   const filtered = filterProducts(products, {
     search,
     category: showFilters ? category : "all",
-    availability: showFilters ? availability : "all",
+    availability,
     priceMin: showFilters ? selectedRange.min : 0,
     priceMax: showFilters ? selectedRange.max : Number.POSITIVE_INFINITY,
   });
 
+  const inStockCount = products.filter((product) => getStockStatus(product) === "in_stock").length;
+  const lowStockCount = products.filter((product) => getStockStatus(product) === "low_stock").length;
+  const outOfStockCount = products.filter((product) => getStockStatus(product) === "out_of_stock").length;
+  const visibleFilterCount = [
+    category !== "all",
+    availability !== "all",
+    priceRangeIdx !== 0,
+  ].filter(Boolean).length;
+
   return (
-    <Box>
+    <Box sx={{ pb: { xs: 3, md: 4 } }}>
       <PageHeader subtitle="Browse your product catalog" />
 
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
-        <TextField
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          size="small"
-          sx={{ minWidth: 220 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchOutlined fontSize="small" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title="Scan barcode to search">
-                    <IconButton size="small" onClick={() => setScannerOpen(true)}>
-                      <QrCodeScannerOutlined fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </InputAdornment>
-              ),
-            },
+      <Paper
+        variant="outlined"
+        sx={{
+          p: { xs: 1.5, sm: 2 },
+          mb: { xs: 2, md: 3 },
+          borderColor: "rgba(31, 41, 51, 0.08)",
+          boxShadow: { xs: "0 10px 30px rgba(31, 41, 51, 0.05)", md: "none" },
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(4, auto)" },
+            gap: 1,
+            mb: 1.5,
           }}
-        />
-
-        <Button
-          variant={showFilters ? "contained" : "outlined"}
-          startIcon={<FilterListOutlined />}
-          onClick={() => setShowFilters((visible) => !visible)}
-          sx={{ textTransform: "none" }}
         >
-          {showFilters ? "Hide filters" : "Show filters"}
-        </Button>
+          <Chip
+            clickable
+            icon={<Inventory2Outlined />}
+            label={`${products.length.toLocaleString()} All`}
+            variant={availability === "all" ? "filled" : "outlined"}
+            onClick={() => handleAvailabilityClick("all")}
+            sx={{ justifyContent: "flex-start", fontWeight: 700 }}
+          />
+          <Chip
+            clickable
+            icon={<Inventory2Outlined />}
+            label={`${inStockCount.toLocaleString()} In Stock`}
+            color="success"
+            variant={availability === "in_stock" ? "filled" : "outlined"}
+            onClick={() => handleAvailabilityClick("in_stock")}
+            sx={{ justifyContent: "flex-start", fontWeight: 700 }}
+          />
+          <Chip
+            clickable
+            icon={<WarningAmberOutlined />}
+            label={`${lowStockCount.toLocaleString()} Low Stock`}
+            color="warning"
+            variant={availability === "low_stock" ? "filled" : "outlined"}
+            onClick={() => handleAvailabilityClick("low_stock")}
+            sx={{ justifyContent: "flex-start", fontWeight: 700 }}
+          />
+          <Chip
+            clickable
+            icon={<Inventory2Outlined />}
+            label={`${outOfStockCount.toLocaleString()} Out`}
+            color="error"
+            variant={availability === "out_of_stock" ? "filled" : "outlined"}
+            onClick={() => handleAvailabilityClick("out_of_stock")}
+            sx={{ justifyContent: "flex-start", fontWeight: 700 }}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "minmax(260px, 1fr) auto" },
+            gap: 1.25,
+            alignItems: "center",
+          }}
+        >
+          <TextField
+            placeholder="Search products or scan barcode..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="small"
+            fullWidth
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchOutlined fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip title="Scan barcode to search">
+                      <IconButton size="small" onClick={() => setScannerOpen(true)}>
+                        <QrCodeScannerOutlined fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+
+          <Button
+            variant={showFilters ? "contained" : "outlined"}
+            startIcon={<FilterListOutlined />}
+            onClick={() => setShowFilters((visible) => !visible)}
+            sx={{
+              minHeight: 40,
+              px: 2,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {showFilters ? `Filters${visibleFilterCount ? ` (${visibleFilterCount})` : ""}` : "Filters"}
+          </Button>
+        </Box>
 
         {showFilters && (
-          <>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "180px 220px" },
+              gap: 1.25,
+              alignItems: "center",
+              mt: 1.5,
+              pt: 1.5,
+              borderTop: 1,
+              borderColor: "divider",
+            }}
+          >
             <TextField
               select
               label="Category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               size="small"
-              sx={{ minWidth: 160 }}
+              fullWidth
             >
               <MenuItem value="all">All Categories</MenuItem>
               {categories.map((cat) => (
@@ -168,7 +264,7 @@ export function ProductsPage() {
               value={priceRangeIdx}
               onChange={(e) => setPriceRangeIdx(Number(e.target.value))}
               size="small"
-              sx={{ minWidth: 200 }}
+              fullWidth
             >
               {PRICE_RANGES.map((range, idx) => (
                 <MenuItem key={idx} value={idx}>
@@ -176,22 +272,9 @@ export function ProductsPage() {
                 </MenuItem>
               ))}
             </TextField>
-
-            <ToggleButtonGroup
-              value={availability}
-              exclusive
-              onChange={(_, val) => val && setAvailability(val)}
-              size="small"
-            >
-              {AVAILABILITY_OPTIONS.map((opt) => (
-                <ToggleButton key={opt.value} value={opt.value}>
-                  {opt.label}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </>
+          </Box>
         )}
-      </Box>
+      </Paper>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -200,12 +283,12 @@ export function ProductsPage() {
       ) : filtered.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 8 }}>
           <Typography variant="body1" color="text.secondary">
-            No products match your {showFilters ? "filters" : "search"}
+            No products match your {showFilters || availability !== "all" ? "filters" : "search"}
           </Typography>
         </Box>
       ) : (
         <>
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
             {filtered.map((product) => (
               <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <ProductCard product={product} onClick={() => {}} />

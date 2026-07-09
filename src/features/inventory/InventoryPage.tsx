@@ -12,6 +12,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Paper,
   Grid,
   IconButton,
   InputAdornment,
@@ -30,7 +31,6 @@ import { CategoryModal } from "../products/CategoryModal";
 import { getCategories, getItemByBarcode, getItems, mapItemToProduct } from "../products/products.api";
 import type { Category, Product } from "../products/products.types";
 import { useBatchesQuery } from "./inventory.api";
-import type { BatchItem } from "./inventory.api";
 import { ProductStockCard } from "./ProductStockCard";
 import { BatchList } from "./BatchList";
 import { QuickReceiveModal } from "./QuickReceiveModal";
@@ -83,6 +83,7 @@ export function InventoryPage() {
     try {
       const { data } = await getItems(storeId, {
         search: searchRef.current || undefined,
+        category: categoryFilter !== "all" ? categoryFilter : undefined,
         page: pageNum,
         pageSize: PAGE_SIZE,
       });
@@ -99,15 +100,15 @@ export function InventoryPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [storeId]);
+  }, [storeId, categoryFilter]);
 
-  // Fetch page 1 when search changes or on mount
+  // Fetch page 1 when search or category filter changes or on mount
   useEffect(() => {
     setPage(1);
     setProducts([]);
     setHasMore(true);
     loadPage(1, false);
-  }, [search, loadPage]);
+  }, [search, categoryFilter, loadPage]);
 
   // Fetch categories for the filter dropdown
   useEffect(() => {
@@ -145,7 +146,6 @@ export function InventoryPage() {
   const totalIncoming = inTransitBatches.total + pendingBatches.total;
 
   const displayedProducts = products.filter((p) => {
-    if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
     if (stockFilter === "low" && (p.stockQuantity === 0 || p.stockQuantity > p.lowStockThreshold)) return false;
     if (stockFilter === "out" && p.stockQuantity !== 0) return false;
     if (stockFilter === "in" && p.stockQuantity === 0) return false;
@@ -153,85 +153,142 @@ export function InventoryPage() {
   });
 
   return (
-    <Box>
+    <Box sx={{ pb: { xs: 3, md: 4 } }}>
       <PageHeader
         subtitle="Manage products, stock, and incoming shipments"
         action={
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            <Button variant="outlined" startIcon={<CategoryOutlined />} onClick={() => setCategoryModalOpen(true)}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr 1fr", sm: "auto auto" },
+              gap: 1,
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
+            <Button
+              variant="outlined"
+              startIcon={<CategoryOutlined />}
+              onClick={() => setCategoryModalOpen(true)}
+              sx={{ minHeight: 40 }}
+            >
               Categories
             </Button>
-            <Button variant="contained" startIcon={<AddOutlined />} onClick={() => setAddProductOpen(true)}>
+            <Button
+              variant="contained"
+              startIcon={<AddOutlined />}
+              onClick={() => setAddProductOpen(true)}
+              sx={{ minHeight: 40 }}
+            >
               Add Product
             </Button>
           </Box>
         }
       />
 
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
-        <Chip icon={<Inventory2Outlined />} label={`${products.length.toLocaleString()} Products`} variant="outlined" />
-        <Chip icon={<CallReceivedOutlined />} label={`${lowStockCount.toLocaleString()} Low Stock`} color="warning" variant="outlined" />
-        <Chip icon={<Inventory2Outlined />} label={`${outOfStockCount.toLocaleString()} Out of Stock`} color="error" variant="outlined" />
-        <Chip icon={<LocalShippingOutlined />} label={`${totalIncoming.toLocaleString()} Incoming`} color="info" variant="outlined" />
-      </Box>
-
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
-        <TextField
-          placeholder="Search by name or barcode..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          size="small"
-          sx={{ minWidth: 280 }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchOutlined fontSize="small" />
-                </InputAdornment>
-              ),
-              endAdornment: search ? undefined : (
-                <InputAdornment position="end">
-                  <Tooltip title="Scan barcode to search">
-                    <IconButton size="small" onClick={() => setScannerOpen(true)}>
-                      <QrCodeScannerOutlined fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </InputAdornment>
-              ),
-            },
+      <Paper
+        variant="outlined"
+        sx={{
+          p: { xs: 1.5, sm: 2 },
+          mb: 2,
+          borderColor: "rgba(31, 41, 51, 0.08)",
+          boxShadow: { xs: "0 10px 30px rgba(31, 41, 51, 0.05)", md: "none" },
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(4, auto)" },
+            gap: 1,
+            mb: 1.5,
           }}
-        />
-        <TextField
-          select
-          label="Category"
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          size="small"
-          sx={{ minWidth: 160 }}
         >
-          <MenuItem value="all">All Categories</MenuItem>
-          {categories.map((cat) => (
-            <MenuItem key={cat.id} value={cat.name}>
-              {cat.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
-          label="Stock Status"
-          value={stockFilter}
-          onChange={(e) => setStockFilter(e.target.value)}
-          size="small"
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="all">All Stock</MenuItem>
-          <MenuItem value="in">In Stock</MenuItem>
-          <MenuItem value="low">Low Stock</MenuItem>
-          <MenuItem value="out">Out of Stock</MenuItem>
-        </TextField>
-      </Box>
+          <Chip icon={<Inventory2Outlined />} label={`${products.length.toLocaleString()} Products`} variant="outlined" sx={{ justifyContent: "flex-start" }} />
+          <Chip icon={<CallReceivedOutlined />} label={`${lowStockCount.toLocaleString()} Low Stock`} color="warning" variant="outlined" sx={{ justifyContent: "flex-start" }} />
+          <Chip icon={<Inventory2Outlined />} label={`${outOfStockCount.toLocaleString()} Out of Stock`} color="error" variant="outlined" sx={{ justifyContent: "flex-start" }} />
+          <Chip icon={<LocalShippingOutlined />} label={`${totalIncoming.toLocaleString()} Incoming`} color="info" variant="outlined" sx={{ justifyContent: "flex-start" }} />
+        </Box>
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "minmax(260px, 1fr) 180px 180px" },
+            gap: 1.25,
+          }}
+        >
+          <TextField
+            placeholder="Search by name or barcode..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="small"
+            fullWidth
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchOutlined fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: search ? undefined : (
+                  <InputAdornment position="end">
+                    <Tooltip title="Scan barcode to search">
+                      <IconButton size="small" onClick={() => setScannerOpen(true)}>
+                        <QrCodeScannerOutlined fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <TextField
+            select
+            label="Category"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            size="small"
+            fullWidth
+          >
+            <MenuItem value="all">All Categories</MenuItem>
+            {categories.map((cat) => (
+              <MenuItem key={cat.id} value={cat.name}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Stock Status"
+            value={stockFilter}
+            onChange={(e) => setStockFilter(e.target.value)}
+            size="small"
+            fullWidth
+          >
+            <MenuItem value="all">All Stock</MenuItem>
+            <MenuItem value="in">In Stock</MenuItem>
+            <MenuItem value="low">Low Stock</MenuItem>
+            <MenuItem value="out">Out of Stock</MenuItem>
+          </TextField>
+        </Box>
+      </Paper>
+
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        variant="scrollable"
+        allowScrollButtonsMobile
+        sx={{
+          mb: { xs: 2, md: 3 },
+          borderBottom: 1,
+          borderColor: "divider",
+          minHeight: 44,
+          "& .MuiTab-root": {
+            minHeight: 44,
+            px: { xs: 1.5, sm: 2 },
+            textTransform: "none",
+            fontWeight: 700,
+          },
+        }}
+      >
         <Tab label={`Products (${products.length.toLocaleString()})`} />
         <Tab label={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -243,11 +300,28 @@ export function InventoryPage() {
 
       {tab === 0 && (
         <Box>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3 }}>
-            <Button variant="outlined" startIcon={<CallReceivedOutlined />} onClick={() => setBulkReceiveOpen(true)}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr 1fr", sm: "auto auto" },
+              gap: 1,
+              mb: { xs: 2, md: 3 },
+            }}
+          >
+            <Button
+              variant="outlined"
+              startIcon={<CallReceivedOutlined />}
+              onClick={() => setBulkReceiveOpen(true)}
+              sx={{ minHeight: 40 }}
+            >
               Receive Stock
             </Button>
-            <Button variant="outlined" startIcon={<LocalShippingOutlined />} onClick={() => setCreateIncomingOpen(true)}>
+            <Button
+              variant="outlined"
+              startIcon={<LocalShippingOutlined />}
+              onClick={() => setCreateIncomingOpen(true)}
+              sx={{ minHeight: 40 }}
+            >
               Create Incoming
             </Button>
           </Box>
@@ -265,7 +339,7 @@ export function InventoryPage() {
             </Box>
           ) : (
             <>
-              <Grid container spacing={3}>
+              <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
                 {displayedProducts.map((product) => (
                   <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <ProductStockCard
@@ -298,7 +372,22 @@ export function InventoryPage() {
 
       {tab === 1 && (
         <Box>
-          <Tabs value={batchTab} onChange={(_, v) => setBatchTab(v)} sx={{ mb: 2 }}>
+          <Tabs
+            value={batchTab}
+            onChange={(_, v) => setBatchTab(v)}
+            variant="scrollable"
+            allowScrollButtonsMobile
+            sx={{
+              mb: 2,
+              minHeight: 42,
+              "& .MuiTab-root": {
+                minHeight: 42,
+                px: { xs: 1.5, sm: 2 },
+                textTransform: "none",
+                fontWeight: 700,
+              },
+            }}
+          >
             <Tab label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 In Transit

@@ -116,8 +116,7 @@ export function NewSaleStep2({ data, onChange }: Props) {
   );
 
   return (
-    <Box mt={2}>
-      {/* Service type */}
+    <Box>
       <TextField
         select
         label="Service Type"
@@ -135,21 +134,26 @@ export function NewSaleStep2({ data, onChange }: Props) {
         ))}
       </TextField>
 
-      {/* Services list */}
-      <Typography variant="subtitle2" mb={1}>
+      <Typography variant="subtitle2" mb={1} fontWeight={800}>
         Services
       </Typography>
       {data.services.map((svc) => (
         <Box
           key={svc.id}
           sx={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
             alignItems: "center",
-            justifyContent: "space-between",
-            mb: 0.5,
+            gap: 1,
+            mb: 0.75,
+            p: 1.25,
+            border: 1,
+            borderColor: "rgba(31, 41, 51, 0.08)",
+            borderRadius: 1,
+            bgcolor: "rgba(31, 41, 51, 0.03)",
           }}
         >
-          <Typography variant="body2">{svc.name}</Typography>
+          <Typography variant="body2" fontWeight={700} noWrap>{svc.name}</Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="body2" fontWeight={600}>
               {formatKsh(svc.basePrice)}
@@ -166,7 +170,8 @@ export function NewSaleStep2({ data, onChange }: Props) {
         size="small"
         value=""
         onChange={(e) => addService(e.target.value)}
-        sx={{ minWidth: 220, mt: 1, mb: 2 }}
+        fullWidth
+        sx={{ mt: 1, mb: 2 }}
       >
         {apiServices
           .filter((s) => s.active)
@@ -179,22 +184,27 @@ export function NewSaleStep2({ data, onChange }: Props) {
 
       <Divider sx={{ my: 2 }} />
 
-      {/* Products list */}
-      <Typography variant="subtitle2" mb={1}>
+      <Typography variant="subtitle2" mb={1} fontWeight={800}>
         Products
       </Typography>
       {data.products.map((p, idx) => (
-        <Grid
-          container
-          spacing={1}
+        <Box
           key={idx}
-          sx={{ mb: 1 }}
-          alignItems="center"
+          sx={{
+            mb: 1.25,
+            p: 1.25,
+            border: 1,
+            borderColor: "rgba(31, 41, 51, 0.08)",
+            borderRadius: 1,
+            bgcolor: "rgba(31, 41, 51, 0.03)",
+          }}
         >
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid container spacing={1} alignItems="center">
+          <Grid size={{ xs: 12, sm: 5 }}>
             <TextField
               select
               size="small"
+              label="Product"
               fullWidth
               value={p.productId}
               onChange={(e) => updateProduct(idx, "productId", e.target.value)}
@@ -206,7 +216,7 @@ export function NewSaleStep2({ data, onChange }: Props) {
               ))}
             </TextField>
           </Grid>
-          <Grid size={{ xs: 4, sm: 2 }}>
+          <Grid size={{ xs: 6, sm: 2 }}>
             <TextField
               size="small"
               type="number"
@@ -216,10 +226,10 @@ export function NewSaleStep2({ data, onChange }: Props) {
               onChange={(e) =>
                 updateProduct(idx, "quantity", Number(e.target.value))
               }
-              inputProps={{ min: 1 }}
+              slotProps={{ htmlInput: { min: 1 } }}
             />
           </Grid>
-          <Grid size={{ xs: 4, sm: 2 }}>
+          <Grid size={{ xs: 6, sm: 2 }}>
             <TextField
               size="small"
               type="number"
@@ -231,23 +241,28 @@ export function NewSaleStep2({ data, onChange }: Props) {
               }
             />
           </Grid>
-          <Grid size={{ xs: 3, sm: 2 }}>
-            <Typography variant="body2" fontWeight={600}>
+          <Grid size={{ xs: 10, sm: 2 }}>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Line Total
+            </Typography>
+            <Typography variant="body2" fontWeight={800}>
               {formatKsh(p.lineTotal)}
             </Typography>
           </Grid>
-          <Grid size={{ xs: 1 }}>
+          <Grid size={{ xs: 2, sm: 1 }} sx={{ textAlign: "right" }}>
             <IconButton size="small" onClick={() => removeProduct(idx)}>
               <DeleteOutlined fontSize="small" />
             </IconButton>
           </Grid>
-        </Grid>
+          </Grid>
+        </Box>
       ))}
       <Button
         size="small"
         startIcon={<AddOutlined />}
         onClick={addProduct}
-        sx={{ mb: 2 }}
+        variant="outlined"
+        sx={{ mb: 2, minHeight: 38 }}
       >
         Add Product
       </Button>
@@ -260,8 +275,13 @@ export function NewSaleStep2({ data, onChange }: Props) {
           display: "flex",
           flexDirection: "column",
           gap: 0.5,
-          maxWidth: 300,
+          maxWidth: { xs: "none", sm: 320 },
           ml: "auto",
+          p: 1.5,
+          border: 1,
+          borderColor: "rgba(31, 41, 51, 0.08)",
+          borderRadius: 1,
+          bgcolor: "rgba(31, 41, 51, 0.03)",
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
@@ -292,7 +312,7 @@ export function NewSaleStep2({ data, onChange }: Props) {
             value={data.discount}
             onChange={(e) => set("discount", Number(e.target.value))}
             sx={{ width: 110 }}
-            inputProps={{ min: 0 }}
+            slotProps={{ htmlInput: { min: 0 } }}
           />
         </Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>

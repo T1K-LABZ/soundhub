@@ -4,7 +4,6 @@ import {
   Button,
   Chip,
   Collapse,
-  IconButton,
   InputAdornment,
   MenuItem,
   TextField,
@@ -63,10 +62,16 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
 
   return (
     <Box sx={{ mb: 2 }}>
-      {/* Search bar + filter toggle */}
-      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr auto", sm: "minmax(260px, 1fr) auto" },
+          gap: 1,
+          alignItems: "center",
+        }}
+      >
         <TextField
-          placeholder="Search name or plate..."
+          placeholder="Search customer, plate, or phone..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
           size="small"
@@ -81,50 +86,51 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
             },
           }}
         />
-        <IconButton
+        <Button
+          variant={expanded ? "contained" : "outlined"}
+          startIcon={<FilterListOutlined />}
           onClick={() => setExpanded(!expanded)}
           sx={{
-            border: "1px solid",
-            borderColor: expanded ? "primary.main" : "divider",
-            bgcolor: expanded ? "primary.main" : "transparent",
-            color: expanded ? "white" : "text.secondary",
-            "&:hover": {
-              bgcolor: expanded ? "primary.dark" : "action.hover",
-            },
+            minHeight: 40,
+            px: { xs: 1.25, sm: 2 },
+            whiteSpace: "nowrap",
           }}
         >
-          <FilterListOutlined />
+          Filters
           {activeCount > 0 && (
             <Chip
               label={activeCount}
               size="small"
               sx={{
-                position: "absolute",
-                top: -6,
-                right: -6,
+                ml: 0.75,
                 height: 18,
                 minWidth: 18,
-                bgcolor: "error.main",
-                color: "white",
+                bgcolor: expanded ? "white" : "error.main",
+                color: expanded ? "primary.main" : "white",
                 fontSize: "0.65rem",
                 fontWeight: 700,
               }}
             />
           )}
-        </IconButton>
+        </Button>
       </Box>
 
-      {/* Collapsible filter options */}
       <Collapse in={expanded}>
         <Box
           sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 1.5,
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              md: "repeat(4, minmax(0, 1fr))",
+            },
+            gap: 1.25,
             mt: 1.5,
             p: 1.5,
-            bgcolor: "background.default",
-            borderRadius: 2,
+            bgcolor: "rgba(31, 41, 51, 0.03)",
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 1,
           }}
         >
           <TextField
@@ -133,7 +139,7 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
             value={filters.paymentStatus}
             onChange={(e) => set("paymentStatus", e.target.value)}
             size="small"
-            sx={{ minWidth: 140 }}
+            fullWidth
           >
             {PAYMENT_STATUSES.map((s) => (
               <MenuItem key={s} value={s}>{s}</MenuItem>
@@ -146,7 +152,7 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
             value={filters.serviceType}
             onChange={(e) => set("serviceType", e.target.value)}
             size="small"
-            sx={{ minWidth: 140 }}
+            fullWidth
           >
             {SERVICE_TYPES.map((t) => (
               <MenuItem key={t} value={t}>{t}</MenuItem>
@@ -159,7 +165,7 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
             value={filters.carMake}
             onChange={(e) => set("carMake", e.target.value)}
             size="small"
-            sx={{ minWidth: 130 }}
+            fullWidth
           >
             {CAR_MAKES.map((m) => (
               <MenuItem key={m} value={m}>{m}</MenuItem>
@@ -172,7 +178,7 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
             value={filters.technician}
             onChange={(e) => set("technician", e.target.value)}
             size="small"
-            sx={{ minWidth: 130 }}
+            fullWidth
           >
             {TECHNICIANS.map((t) => (
               <MenuItem key={t} value={t}>{t}</MenuItem>
@@ -185,7 +191,7 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
             value={filters.jobStatus}
             onChange={(e) => set("jobStatus", e.target.value)}
             size="small"
-            sx={{ minWidth: 140 }}
+            fullWidth
           >
             {JOB_STATUSES.map((s) => (
               <MenuItem key={s} value={s}>{s}</MenuItem>
@@ -198,7 +204,7 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
             value={filters.dateFrom}
             onChange={(e) => set("dateFrom", e.target.value)}
             size="small"
-            sx={{ minWidth: 140 }}
+            fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
           />
 
@@ -208,7 +214,7 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
             value={filters.dateTo}
             onChange={(e) => set("dateTo", e.target.value)}
             size="small"
-            sx={{ minWidth: 140 }}
+            fullWidth
             slotProps={{ inputLabel: { shrink: true } }}
           />
 
@@ -218,7 +224,7 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
               size="small"
               startIcon={<ClearOutlined />}
               onClick={clearAll}
-              sx={{ alignSelf: "center" }}
+              sx={{ minHeight: 40 }}
             >
               Clear All
             </Button>
@@ -226,7 +232,6 @@ export function SalesFiltersBar({ filters, onChange }: Props) {
         </Box>
       </Collapse>
 
-      {/* Active filter chips (when collapsed) */}
       {!expanded && activeCount > 0 && (
         <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", mt: 1 }}>
           {filters.paymentStatus !== "All" && (

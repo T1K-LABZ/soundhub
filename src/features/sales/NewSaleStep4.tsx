@@ -47,7 +47,7 @@ export function NewSaleStep4({ data, onChange }: Props) {
   }
 
   return (
-    <Box mt={2}>
+    <Box>
       <Grid container spacing={2}>
         {/* Technician */}
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -131,7 +131,13 @@ export function NewSaleStep4({ data, onChange }: Props) {
           <Typography variant="body2" color="text.secondary" mb={1}>
             Difficulty Rating
           </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "repeat(3, minmax(0, 1fr))", sm: "repeat(3, auto)" },
+              gap: 1,
+            }}
+          >
             {DIFFICULTY_OPTIONS.map((d) => {
               const color = DIFFICULTY_COLOR[d];
               const selected = data.difficultyRating === d;
@@ -146,6 +152,7 @@ export function NewSaleStep4({ data, onChange }: Props) {
                     color: selected ? "white" : color,
                     bgcolor: selected ? color : "transparent",
                     "&:hover": { bgcolor: selected ? color : `${color}18` },
+                    minHeight: 38,
                   }}
                 >
                   {d}

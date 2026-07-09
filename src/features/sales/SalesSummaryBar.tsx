@@ -32,13 +32,16 @@ function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
         minWidth: 140,
         flex: "1 1 140px",
         display: "flex",
+        overflow: "hidden",
+        borderColor: "rgba(31, 41, 51, 0.08)",
+        boxShadow: "0 10px 28px rgba(31, 41, 51, 0.06)",
       }}
     >
       <CardContent
         sx={{
           display: "flex",
-          alignItems: "center",
-          gap: 1.5,
+          alignItems: "flex-start",
+          gap: 1.25,
           p: 1.5,
           height: "100%",
           boxSizing: "border-box",
@@ -54,6 +57,7 @@ function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
             p: 0.75,
             display: "flex",
             flexShrink: 0,
+            boxShadow: `inset 0 0 0 1px ${color}24`,
           }}
         >
           {icon}
@@ -64,7 +68,7 @@ function SummaryCard({ label, value, sub, icon, color }: SummaryCardProps) {
             variant="caption"
             color="text.secondary"
             display="block"
-            sx={{ lineHeight: 1.2, mb: 0.25 }}
+            sx={{ lineHeight: 1.2, mb: 0.25, fontWeight: 700 }}
           >
             {label}
           </Typography>
@@ -99,9 +103,14 @@ export function SalesSummaryBar({ stats }: Props) {
   return (
     <Box
       sx={{
-        display: "flex",
-        gap: 1.5,
-        mb: 3,
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "repeat(2, minmax(160px, 1fr))",
+          sm: "repeat(3, minmax(160px, 1fr))",
+          lg: "repeat(6, minmax(0, 1fr))",
+        },
+        gap: { xs: 1, sm: 1.5 },
+        mb: { xs: 2, md: 3 },
         overflowX: "auto",
         pb: 0.5,
         "&::-webkit-scrollbar": { height: 4 },
@@ -111,46 +120,44 @@ export function SalesSummaryBar({ stats }: Props) {
         },
       }}
     >
-      <Box sx={{ display: "flex", gap: 1.5, minWidth: "min-content" }}>
-        <SummaryCard
-          label="Sales This Month"
-          value={formatKsh(stats.totalSalesThisMonth)}
-          icon={<AttachMoneyOutlined fontSize="small" />}
-          color="#9333EA"
-        />
-        <SummaryCard
-          label="Paid Jobs"
-          value={stats.paidJobs.toString()}
-          sub={`${stats.totalSales} total`}
-          icon={<CheckCircleOutlined fontSize="small" />}
-          color="#16A34A"
-        />
-        <SummaryCard
-          label="Unpaid Jobs"
-          value={stats.unpaidJobs.toString()}
-          sub={formatKsh(stats.totalDeposits)}
-          icon={<MoneyOffOutlined fontSize="small" />}
-          color="#DC2626"
-        />
-        <SummaryCard
-          label="Pending"
-          value={stats.pendingJobs.toString()}
-          icon={<PendingActionsOutlined fontSize="small" />}
-          color="#D97706"
-        />
-        <SummaryCard
-          label="In Progress"
-          value={stats.inProgressJobs.toString()}
-          icon={<HourglassEmptyOutlined fontSize="small" />}
-          color="#2563EB"
-        />
-        <SummaryCard
-          label="Completed"
-          value={stats.completedJobs.toString()}
-          icon={<TodayOutlined fontSize="small" />}
-          color="#16A34A"
-        />
-      </Box>
+      <SummaryCard
+        label="Sales This Month"
+        value={formatKsh(stats.totalSalesThisMonth)}
+        icon={<AttachMoneyOutlined fontSize="small" />}
+        color="#9333EA"
+      />
+      <SummaryCard
+        label="Paid Jobs"
+        value={stats.paidJobs.toString()}
+        sub={`${stats.totalSales} total`}
+        icon={<CheckCircleOutlined fontSize="small" />}
+        color="#16A34A"
+      />
+      <SummaryCard
+        label="Unpaid Jobs"
+        value={stats.unpaidJobs.toString()}
+        sub={formatKsh(stats.totalDeposits)}
+        icon={<MoneyOffOutlined fontSize="small" />}
+        color="#DC2626"
+      />
+      <SummaryCard
+        label="Pending"
+        value={stats.pendingJobs.toString()}
+        icon={<PendingActionsOutlined fontSize="small" />}
+        color="#D97706"
+      />
+      <SummaryCard
+        label="In Progress"
+        value={stats.inProgressJobs.toString()}
+        icon={<HourglassEmptyOutlined fontSize="small" />}
+        color="#2563EB"
+      />
+      <SummaryCard
+        label="Completed"
+        value={stats.completedJobs.toString()}
+        icon={<TodayOutlined fontSize="small" />}
+        color="#16A34A"
+      />
     </Box>
   );
 }

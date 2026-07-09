@@ -13,6 +13,8 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Paper,
+  Typography,
 } from "@mui/material";
 import { useState } from "react";
 import { PageHeader } from "../../components/ui/PageHeader";
@@ -61,6 +63,7 @@ export function SalesPage() {
     : null;
 
   const filtered = filterJobs(allJobs, filters);
+  const openJobs = allJobs.filter((job) => job.jobStatus !== "Completed").length;
 
   function handleView(job: Job) {
     setSelectedJobId(job.id);
@@ -73,39 +76,94 @@ export function SalesPage() {
   }
 
   return (
-    <Box>
-      <PageHeader
-        subtitle="Manage all customer jobs, installations, and payments"
-        action={(
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, alignItems: "center" }}>
-            <Button
-              variant="contained"
-              color="warning"
-              startIcon={<AddOutlined />}
-              onClick={() => setOpenModal("newSale")}
+    <Box sx={{ pb: { xs: 3, md: 4 } }}>
+      <Paper
+        variant="outlined"
+        sx={{
+          mb: { xs: 2, md: 3 },
+          p: { xs: 1.75, sm: 2.5 },
+          overflow: "hidden",
+          borderColor: "rgba(31, 41, 51, 0.08)",
+          boxShadow: { xs: "0 14px 36px rgba(31, 41, 51, 0.07)", md: "none" },
+        }}
+      >
+        <PageHeader
+          subtitle="Manage customer jobs, installations, and payments"
+          action={(
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: isOwner ? "1fr 1fr auto" : "1fr", sm: "auto auto auto" },
+                gap: 1,
+                alignItems: "center",
+                width: { xs: "100%", sm: "auto" },
+              }}
             >
-              New Sale / Job
-            </Button>
-            {isOwner && (
               <Button
-                variant="outlined"
-                startIcon={<ShoppingBagOutlined />}
-                onClick={() => setOpenModal("walkIn")}
+                variant="contained"
+                startIcon={<AddOutlined />}
+                onClick={() => setOpenModal("newSale")}
+                sx={{ minHeight: 42, bgcolor: "#F70000", "&:hover": { bgcolor: "#D60000" } }}
               >
-                Walk-In
+                New Job
               </Button>
-            )}
-            {isOwner && (
-              <IconButton
-                onClick={(e) => setMoreAnchor(e.currentTarget)}
-                size="small"
-              >
-                <MoreVertOutlined />
-              </IconButton>
-            )}
+              {isOwner && (
+                <Button
+                  variant="outlined"
+                  startIcon={<ShoppingBagOutlined />}
+                  onClick={() => setOpenModal("walkIn")}
+                  sx={{ minHeight: 42 }}
+                >
+                  Walk-In
+                </Button>
+              )}
+              {isOwner && (
+                <IconButton
+                  onClick={(e) => setMoreAnchor(e.currentTarget)}
+                  size="small"
+                  sx={{
+                    width: 42,
+                    height: 42,
+                    border: 1,
+                    borderColor: "divider",
+                    bgcolor: "rgba(31, 41, 51, 0.03)",
+                  }}
+                >
+                  <MoreVertOutlined />
+                </IconButton>
+              )}
+            </Box>
+          )}
+        />
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "repeat(3, minmax(0, 1fr))", sm: "repeat(3, auto)" },
+            gap: 1,
+            mt: -1,
+          }}
+        >
+          <Box sx={{ border: 1, borderColor: "divider", borderRadius: 1, px: 1.25, py: 1 }}>
+            <Typography variant="caption" color="text.secondary">Jobs</Typography>
+            <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.1 }}>
+              {allJobs.length.toLocaleString()}
+            </Typography>
           </Box>
-        )}
-      />
+          <Box sx={{ border: 1, borderColor: "divider", borderRadius: 1, px: 1.25, py: 1 }}>
+            <Typography variant="caption" color="text.secondary">Open</Typography>
+            <Typography variant="h6" fontWeight={800} color="primary" sx={{ lineHeight: 1.1 }}>
+              {openJobs.toLocaleString()}
+            </Typography>
+          </Box>
+          <Box sx={{ border: 1, borderColor: "divider", borderRadius: 1, px: 1.25, py: 1 }}>
+            <Typography variant="caption" color="text.secondary">Showing</Typography>
+            <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.1 }}>
+              {filtered.length.toLocaleString()}
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       {/* Summary bar — owners only */}
       {isOwner && stats && <SalesSummaryBar stats={stats} />}
@@ -127,13 +185,22 @@ export function SalesPage() {
         </Menu>
       )}
 
-      <SalesFiltersBar filters={filters} onChange={setFilters} />
+      <Paper
+        variant="outlined"
+        sx={{
+          p: { xs: 1.5, sm: 2 },
+          borderColor: "rgba(31, 41, 51, 0.08)",
+          boxShadow: { xs: "0 10px 30px rgba(31, 41, 51, 0.05)", md: "none" },
+        }}
+      >
+        <SalesFiltersBar filters={filters} onChange={setFilters} />
 
-      <SalesTable
-        jobs={filtered}
-        onView={handleView}
-        onEdit={handleEdit}
-      />
+        <SalesTable
+          jobs={filtered}
+          onView={handleView}
+          onEdit={handleEdit}
+        />
+      </Paper>
 
       {/* Knowledge base — owners only */}
       {isOwner && <KnowledgeBasePanel />}

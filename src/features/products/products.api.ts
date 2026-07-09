@@ -63,7 +63,7 @@ export async function deleteProduct(
 
 export async function getItems(
   storeId: string,
-  params?: { search?: string; page?: number; pageSize?: number },
+  params?: { search?: string; page?: number; pageSize?: number; category?: string },
 ): Promise<{ data: InventoryItemResponse[]; total: number }> {
   const response = await apiClient.get<ApiResponse<InventoryItemResponse[]>>(
     '/inventory/items',
@@ -80,7 +80,7 @@ export function mapItemToProduct(item: InventoryItemResponse): Product {
     id: item.id,
     name: item.name,
     description: item.description ?? '',
-    category: item.category ?? item.categoryRef?.name ?? '',
+    category: item.categoryRef?.name ?? item.category ?? '',
     barcode: item.barcode ?? '',
     buyingPrice: Number(item.costPrice ?? 0),
     sellingPrice: Number(item.sellingPrice ?? 0),

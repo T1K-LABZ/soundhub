@@ -1,4 +1,4 @@
-import { DownloadOutlined, PrintOutlined } from "@mui/icons-material";
+import { CloseOutlined, DownloadOutlined, PrintOutlined } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -7,6 +7,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Typography,
 } from "@mui/material";
 import { JOB_STATUS_COLOR, PAYMENT_STATUS_COLOR } from "./sales.constants";
@@ -324,58 +325,106 @@ export function ViewJobModal({ open, job, onClose }: Props) {
       fullWidth
       maxWidth="md"
       scroll="paper"
+      slotProps={{
+        paper: {
+          sx: {
+            width: { xs: "calc(100% - 24px)", sm: "100%" },
+            m: { xs: 1.5, sm: 4 },
+            borderRadius: { xs: 2, sm: 2.5 },
+            overflow: "hidden",
+          },
+        },
+      }}
     >
-      {/* Header — logo + ref + status badges */}
-      <DialogTitle sx={{ pb: 1 }}>
+      <DialogTitle
+        sx={{
+          p: { xs: 2, sm: 2.5 },
+          borderBottom: 1,
+          borderColor: "divider",
+          bgcolor: "rgba(31, 41, 51, 0.02)",
+        }}
+      >
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-            flexWrap: "wrap",
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr auto", sm: "auto minmax(0, 1fr) auto" },
+            gap: { xs: 1.25, sm: 2 },
+            alignItems: "start",
           }}
         >
           <Box
             component="img"
             src="/images/soundhublogo.png"
             alt="SoundHub Logo"
-            sx={{ height: 40, objectFit: "contain" }}
+            sx={{
+              height: { xs: 34, sm: 42 },
+              width: { xs: 104, sm: 128 },
+              objectFit: "contain",
+              justifySelf: "start",
+              gridColumn: { xs: "1 / 2", sm: "auto" },
+            }}
           />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
+          <Box sx={{ minWidth: 0, gridColumn: { xs: "1 / -1", sm: "auto" }, gridRow: { xs: 2, sm: "auto" } }}>
+            <Typography
+              variant="overline"
+              color="text.secondary"
+              sx={{ lineHeight: 1, fontWeight: 800, letterSpacing: 0 }}
+            >
+              Job Card
+            </Typography>
+            <Typography variant="h5" fontWeight={800} lineHeight={1.15} sx={{ wordBreak: "break-word" }}>
               {job.jobRef}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {formatJobDate(job.createdAt)}
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            <Chip
-              label={job.jobStatus}
+          <Box
+            sx={{
+              display: "flex",
+              gap: 0.75,
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+              alignItems: "center",
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <Chip
+                label={job.jobStatus}
+                size="small"
+                sx={{
+                  bgcolor: `${JOB_STATUS_COLOR[job.jobStatus]}18`,
+                  color: JOB_STATUS_COLOR[job.jobStatus],
+                  fontWeight: 700,
+                  border: `1px solid ${JOB_STATUS_COLOR[job.jobStatus]}40`,
+                  px: 0.5,
+                }}
+              />
+              <Chip
+                label={job.paymentStatus}
+                size="small"
+                sx={{
+                  bgcolor: `${PAYMENT_STATUS_COLOR[job.paymentStatus]}18`,
+                  color: PAYMENT_STATUS_COLOR[job.paymentStatus],
+                  fontWeight: 700,
+                  border: `1px solid ${PAYMENT_STATUS_COLOR[job.paymentStatus]}40`,
+                  px: 0.5,
+                }}
+              />
+            </Box>
+            <IconButton
+              aria-label="Close job card"
+              onClick={onClose}
               size="small"
-              sx={{
-                bgcolor: `${JOB_STATUS_COLOR[job.jobStatus]}18`,
-                color: JOB_STATUS_COLOR[job.jobStatus],
-                fontWeight: 600,
-                border: `1px solid ${JOB_STATUS_COLOR[job.jobStatus]}40`,
-                px: 1,
-              }}
-            />
-            <Chip
-              label={job.paymentStatus}
-              size="small"
-              sx={{
-                bgcolor: `${PAYMENT_STATUS_COLOR[job.paymentStatus]}18`,
-                color: PAYMENT_STATUS_COLOR[job.paymentStatus],
-                fontWeight: 600,
-                px: 1,
-              }}
-            />
+              sx={{ display: { xs: "inline-flex", sm: "none" }, ml: 0.25 }}
+            >
+              <CloseOutlined fontSize="small" />
+            </IconButton>
           </Box>
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ pt: 3 }}>
+      <DialogContent sx={{ p: { xs: 2, sm: 3 }, bgcolor: "#FFFFFF" }}>
         <CustomerSection job={job} />
         <ServicesSection job={job} />
         <ProductsSection job={job} />
@@ -383,14 +432,26 @@ export function ViewJobModal({ open, job, onClose }: Props) {
         <InstallationSection job={job} />
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 1.5 }}>
-        <Button onClick={onClose} sx={{ mr: "auto" }}>
+      <DialogActions
+        sx={{
+          px: { xs: 2, sm: 3 },
+          py: { xs: 1.5, sm: 2 },
+          gap: 1,
+          borderTop: 1,
+          borderColor: "divider",
+          bgcolor: "rgba(31, 41, 51, 0.02)",
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr 1fr", sm: "1fr auto auto" },
+        }}
+      >
+        <Button onClick={onClose} sx={{ justifySelf: "start", gridColumn: { xs: "1 / -1", sm: "auto" } }}>
           Close
         </Button>
         <Button
           startIcon={<DownloadOutlined />}
           variant="outlined"
           onClick={() => job && downloadJobPdf(job)}
+          sx={{ minHeight: 40 }}
         >
           Download PDF
         </Button>
@@ -398,6 +459,7 @@ export function ViewJobModal({ open, job, onClose }: Props) {
           startIcon={<PrintOutlined />}
           variant="outlined"
           onClick={() => window.print()}
+          sx={{ minHeight: 40 }}
         >
           Print
         </Button>

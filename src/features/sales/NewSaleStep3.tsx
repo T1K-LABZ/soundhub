@@ -43,51 +43,65 @@ export function NewSaleStep3({ data, grandTotal, onChange }: Props) {
   const balance = Math.max(0, grandTotal - depositNum);
 
   return (
-    <Box mt={2}>
-      {/* Grand total display */}
+    <Box>
       <Box
         sx={{
-          display: "flex",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) auto",
+          gap: 1,
+          alignItems: "center",
           justifyContent: "space-between",
           mb: 3,
           p: 2,
-          bgcolor: "background.default",
+          bgcolor: "rgba(31, 41, 51, 0.03)",
+          border: 1,
+          borderColor: "rgba(31, 41, 51, 0.08)",
           borderRadius: 1,
         }}
       >
         <Typography variant="body1" fontWeight={600}>
           Job Total
         </Typography>
-        <Typography variant="h6" fontWeight={700}>
+        <Typography variant="h6" fontWeight={800} color="primary" sx={{ whiteSpace: "nowrap" }}>
           {formatKsh(grandTotal)}
         </Typography>
       </Box>
 
-      {/* Payment status radio */}
-      <FormControl sx={{ mb: 3 }}>
+      <FormControl sx={{ mb: 3, width: "100%" }}>
         <FormLabel>Payment Status</FormLabel>
         <RadioGroup
-          row
           value={data.paymentStatus}
           onChange={(e) =>
             set("paymentStatus", e.target.value as PaymentStatus)
           }
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+            gap: 0.75,
+            mt: 1,
+          }}
         >
           <FormControlLabel
             value="Paid"
             control={<Radio />}
             label="Paid in Full"
+            sx={{ m: 0, px: 1, border: 1, borderColor: "divider", borderRadius: 1 }}
           />
           <FormControlLabel
             value="Deposit Made"
             control={<Radio />}
             label="Deposit Made"
+            sx={{ m: 0, px: 1, border: 1, borderColor: "divider", borderRadius: 1 }}
           />
-          <FormControlLabel value="Unpaid" control={<Radio />} label="Unpaid" />
+          <FormControlLabel
+            value="Unpaid"
+            control={<Radio />}
+            label="Unpaid"
+            sx={{ m: 0, px: 1, border: 1, borderColor: "divider", borderRadius: 1 }}
+          />
         </RadioGroup>
       </FormControl>
 
-      {/* Deposit fields */}
       {data.paymentStatus === "Deposit Made" && (
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -98,7 +112,7 @@ export function NewSaleStep3({ data, grandTotal, onChange }: Props) {
               type="number"
               value={data.depositAmount}
               onChange={(e) => set("depositAmount", e.target.value)}
-              inputProps={{ min: 0, max: grandTotal }}
+              slotProps={{ htmlInput: { min: 0, max: grandTotal } }}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -119,7 +133,6 @@ export function NewSaleStep3({ data, grandTotal, onChange }: Props) {
         </Grid>
       )}
 
-      {/* Payment method + mpesa ref */}
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField

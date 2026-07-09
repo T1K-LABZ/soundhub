@@ -59,22 +59,29 @@ export function SalesJobCard({
       variant="outlined"
       sx={{
         cursor: "pointer",
-        transition: "box-shadow 0.2s",
-        "&:hover": { boxShadow: 1 },
+        overflow: "hidden",
+        borderColor: "rgba(31, 41, 51, 0.08)",
+        boxShadow: "0 10px 28px rgba(31, 41, 51, 0.05)",
+        transition: "box-shadow 0.2s, transform 0.2s, border-color 0.2s",
+        "&:hover": {
+          borderColor: "rgba(247, 0, 0, 0.2)",
+          boxShadow: "0 16px 36px rgba(31, 41, 51, 0.1)",
+          transform: "translateY(-1px)",
+        },
       }}
       onClick={onToggle}
     >
-      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-        {/* Header: Job Ref + Date + Amount */}
+      <CardContent sx={{ p: { xs: 1.5, sm: 2 }, "&:last-child": { pb: { xs: 1.5, sm: 2 } } }}>
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
+            gap: 1.25,
             alignItems: "flex-start",
             mb: 1.5,
           }}
         >
-          <Box>
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle2" fontWeight={700}>
               {job.jobRef}
             </Typography>
@@ -82,8 +89,8 @@ export function SalesJobCard({
               {formatJobDate(job.createdAt)}
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Typography variant="subtitle1" fontWeight={700} color="primary">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            <Typography variant="subtitle1" fontWeight={800} color="primary" sx={{ whiteSpace: "nowrap" }}>
               {formatKsh(Number(job.grandTotal) || 0)}
             </Typography>
             {expanded ? (
@@ -94,18 +101,48 @@ export function SalesJobCard({
           </Box>
         </Box>
 
-        {/* Customer + Vehicle */}
-        <Box sx={{ display: "flex", gap: 2, mb: 1.5 }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" fontWeight={500} noWrap>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 1,
+            mb: 1.5,
+          }}
+        >
+          <Box
+            sx={{
+              bgcolor: "rgba(31, 41, 51, 0.04)",
+              border: "1px solid rgba(31, 41, 51, 0.06)",
+              borderRadius: 1,
+              px: 1.25,
+              py: 1,
+              minWidth: 0,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" fontWeight={700}>
+              Customer
+            </Typography>
+            <Typography variant="body2" fontWeight={700} noWrap>
               {job.customerName}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block" noWrap>
               {job.customerPhone}
             </Typography>
           </Box>
-          <Box sx={{ flex: 1, textAlign: "right" }}>
-            <Typography variant="body2" fontWeight={500} noWrap>
+          <Box
+            sx={{
+              bgcolor: "rgba(31, 41, 51, 0.04)",
+              border: "1px solid rgba(31, 41, 51, 0.06)",
+              borderRadius: 1,
+              px: 1.25,
+              py: 1,
+              minWidth: 0,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" fontWeight={700}>
+              Vehicle
+            </Typography>
+            <Typography variant="body2" fontWeight={700} noWrap>
               {job.carPlate}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block" noWrap>
@@ -114,7 +151,6 @@ export function SalesJobCard({
           </Box>
         </Box>
 
-        {/* Chips row */}
         <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", mb: 1.5 }}>
           <StatusChip
             label={job.serviceType}
@@ -130,30 +166,48 @@ export function SalesJobCard({
           />
         </Box>
 
-        {/* Actions */}
         <Box
           sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5 }}
           onClick={(e) => e.stopPropagation()}
         >
           <Tooltip title="View">
-            <IconButton size="small" onClick={onView}>
+            <IconButton
+              size="small"
+              onClick={onView}
+              sx={{
+                width: 34,
+                height: 34,
+                bgcolor: "rgba(31, 41, 51, 0.04)",
+                "&:hover": { color: "primary.main", bgcolor: "rgba(247, 0, 0, 0.08)" },
+              }}
+            >
               <VisibilityOutlined fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Edit">
-            <IconButton size="small" onClick={onEdit}>
+            <IconButton
+              size="small"
+              onClick={onEdit}
+              sx={{
+                width: 34,
+                height: 34,
+                bgcolor: "rgba(31, 41, 51, 0.04)",
+                "&:hover": { color: "primary.main", bgcolor: "rgba(247, 0, 0, 0.08)" },
+              }}
+            >
               <EditOutlined fontSize="small" />
             </IconButton>
           </Tooltip>
         </Box>
 
-        {/* Expanded details */}
         <Collapse in={expanded} unmountOnExit>
           <Box
             sx={{
               mt: 1.5,
               p: 1.5,
-              bgcolor: "background.default",
+              bgcolor: "rgba(31, 41, 51, 0.03)",
+              border: 1,
+              borderColor: "divider",
               borderRadius: 1,
             }}
             onClick={(e) => e.stopPropagation()}

@@ -49,7 +49,14 @@ export function MainLayout() {
           drawerWidth={drawerWidth}
           onMenuClick={() => setMobileOpen((v) => !v)}
         />
-        <Box component="main" sx={{ px: 3, py: 2, mt: 7 }}>
+        <Box
+          component="main"
+          sx={{
+            px: { xs: 1.5, sm: 2.5, md: 3 },
+            py: { xs: 1.5, md: 2 },
+            mt: { xs: 7, md: 7 },
+          }}
+        >
           <Outlet />
         </Box>
       </Box>

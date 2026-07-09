@@ -11,7 +11,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableRow,
   Typography,
 } from "@mui/material";
@@ -27,8 +26,9 @@ export function Section({ title }: { title: string }) {
       variant="overline"
       color="text.secondary"
       display="block"
-      mt={2}
-      mb={0.5}
+      mt={2.25}
+      mb={0.75}
+      sx={{ fontWeight: 800, letterSpacing: 0 }}
     >
       {title}
     </Typography>
@@ -47,15 +47,26 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 0.5 }}>
-      <Box sx={{ color: "text.secondary", display: "flex", alignItems: "center" }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, py: 0.75, minWidth: 0 }}>
+      <Box
+        sx={{
+          color: "primary.main",
+          bgcolor: "rgba(247, 0, 0, 0.08)",
+          borderRadius: 1,
+          width: 30,
+          height: 30,
+          display: "grid",
+          placeItems: "center",
+          flexShrink: 0,
+        }}
+      >
         {icon}
       </Box>
-      <Box sx={{ minWidth: 0 }}>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
         <Typography variant="caption" color="text.secondary" lineHeight={1}>
           {label}
         </Typography>
-        <Typography variant="body2" fontWeight={500} noWrap>
+        <Typography variant="body2" fontWeight={700} noWrap>
           {value}
         </Typography>
       </Box>
@@ -65,16 +76,20 @@ function InfoRow({
 
 export function CustomerSection({ job }: { job: Job }) {
   return (
-    <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", mt: 1 }}>
-      {/* Customer card */}
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+        gap: 1.5,
+      }}
+    >
       <Box
         sx={{
-          flex: "1 1 220px",
-          bgcolor: "grey.50",
-          borderRadius: 2,
+          bgcolor: "rgba(31, 41, 51, 0.03)",
+          borderRadius: 1,
           p: 2,
           border: "1px solid",
-          borderColor: "divider",
+          borderColor: "rgba(31, 41, 51, 0.08)",
         }}
       >
         <Typography
@@ -104,15 +119,13 @@ export function CustomerSection({ job }: { job: Job }) {
         )}
       </Box>
 
-      {/* Vehicle card */}
       <Box
         sx={{
-          flex: "1 1 220px",
-          bgcolor: "grey.50",
-          borderRadius: 2,
+          bgcolor: "rgba(31, 41, 51, 0.03)",
+          borderRadius: 1,
           p: 2,
           border: "1px solid",
-          borderColor: "divider",
+          borderColor: "rgba(31, 41, 51, 0.08)",
         }}
       >
         <Typography
@@ -148,27 +161,37 @@ export function CustomerSection({ job }: { job: Job }) {
 // ── Services & Products tables ────────────────────────────────────────────────
 
 export function ServicesSection({ job }: { job: Job }) {
+  if (job.services.length === 0) return null;
+
   return (
     <>
       <Section title="Services" />
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Service</TableCell>
-            <TableCell>Code</TableCell>
-            <TableCell align="right">Price</TableCell>
-          </TableRow>
-        </TableHead>
+      <Box
+        sx={{
+          border: 1,
+          borderColor: "rgba(31, 41, 51, 0.08)",
+          borderRadius: 1,
+          overflow: "hidden",
+        }}
+      >
+      <Table size="small" sx={{ "& td": { borderColor: "rgba(31, 41, 51, 0.08)" } }}>
         <TableBody>
           {job.services.map((svc) => (
             <TableRow key={svc.id}>
-              <TableCell>{svc.name}</TableCell>
-              <TableCell>{svc.code}</TableCell>
-              <TableCell align="right">{formatKsh(Number(svc.basePrice) || 0)}</TableCell>
+              <TableCell>
+                <Typography variant="body2" fontWeight={700}>{svc.name}</Typography>
+                <Typography variant="caption" color="text.secondary">{svc.code}</Typography>
+              </TableCell>
+              <TableCell align="right">
+                <Typography variant="body2" fontWeight={800}>
+                  {formatKsh(Number(svc.basePrice) || 0)}
+                </Typography>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      </Box>
     </>
   );
 }
@@ -177,34 +200,51 @@ export function ProductsSection({ job }: { job: Job }) {
   return (
     <>
       <Section title="Products" />
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Product</TableCell>
-            <TableCell align="center">Qty</TableCell>
-            <TableCell align="right">Unit</TableCell>
-            <TableCell align="right">Total</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {job.products.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} align="center">
-                No products
-              </TableCell>
-            </TableRow>
-          ) : (
-            job.products.map((p, i) => (
+      {job.products.length === 0 ? (
+        <Box
+          sx={{
+            px: 1.5,
+            py: 1.25,
+            border: 1,
+            borderColor: "rgba(31, 41, 51, 0.08)",
+            borderRadius: 1,
+            bgcolor: "rgba(31, 41, 51, 0.03)",
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            No products added to this job
+          </Typography>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            border: 1,
+            borderColor: "rgba(31, 41, 51, 0.08)",
+            borderRadius: 1,
+            overflow: "hidden",
+          }}
+        >
+          <Table size="small" sx={{ "& td": { borderColor: "rgba(31, 41, 51, 0.08)" } }}>
+            <TableBody>
+              {job.products.map((p, i) => (
               <TableRow key={i}>
-                <TableCell>{p.productName}</TableCell>
-                <TableCell align="center">{p.quantity}</TableCell>
-                <TableCell align="right">{formatKsh(Number(p.unitPrice) || 0)}</TableCell>
-                <TableCell align="right">{formatKsh(Number(p.lineTotal) || 0)}</TableCell>
+                <TableCell>
+                  <Typography variant="body2" fontWeight={700}>{p.productName}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Qty {p.quantity} x {formatKsh(Number(p.unitPrice) || 0)}
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Typography variant="body2" fontWeight={800}>
+                    {formatKsh(Number(p.lineTotal) || 0)}
+                  </Typography>
+                </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+      )}
     </>
   );
 }
@@ -220,26 +260,26 @@ export function PaymentSection({ job }: { job: Job }) {
 
   return (
     <>
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2.25 }} />
       <Section title="Payment" />
 
-      {/* Grand total hero card */}
       <Box
         sx={{
-          background: "linear-gradient(135deg, #1a237e 0%, #283593 100%)",
-          borderRadius: 2,
+          background: "linear-gradient(135deg, #1F2933 0%, #2D2F99 100%)",
+          borderRadius: 1.5,
           p: 2.5,
           mb: 2,
           color: "white",
+          boxShadow: "0 16px 36px rgba(31, 41, 51, 0.18)",
         }}
       >
-        <Typography variant="caption" sx={{ opacity: 0.8, mb: 0.5, display: "block" }}>
+        <Typography variant="caption" sx={{ opacity: 0.8, mb: 0.5, display: "block", fontWeight: 800 }}>
           GRAND TOTAL
         </Typography>
-        <Typography variant="h4" fontWeight={700}>
+        <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1.1 }}>
           {formatKsh(grandTotal)}
         </Typography>
-        <Box sx={{ display: "flex", gap: 1.5, mt: 1.5 }}>
+        <Box sx={{ display: "flex", gap: 1, mt: 1.5, alignItems: "center", flexWrap: "wrap" }}>
           <Chip
             label={job.paymentStatus}
             size="small"
@@ -250,20 +290,19 @@ export function PaymentSection({ job }: { job: Job }) {
               fontSize: "0.75rem",
             }}
           />
-          <Typography variant="caption" sx={{ opacity: 0.8, alignSelf: "center" }}>
+          <Typography variant="caption" sx={{ opacity: 0.85, fontWeight: 700 }}>
             {job.paymentMethod}
           </Typography>
         </Box>
       </Box>
 
-      {/* Discount + subtotal */}
       <Box
         sx={{
-          bgcolor: "grey.50",
-          borderRadius: 1.5,
+          bgcolor: "rgba(31, 41, 51, 0.03)",
+          borderRadius: 1,
           p: 1.5,
           border: "1px solid",
-          borderColor: "divider",
+          borderColor: "rgba(31, 41, 51, 0.08)",
           mb: 1.5,
         }}
       >
@@ -287,23 +326,23 @@ export function PaymentSection({ job }: { job: Job }) {
         </Box>
       </Box>
 
-      {/* Deposit & balance */}
       {job.paymentStatus === "Deposit Made" && (
         <Box
           sx={{
-            display: "flex",
-            gap: 1.5,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 1,
             mb: 1.5,
           }}
         >
           <Box
             sx={{
               flex: 1,
-              bgcolor: "success.light",
-              borderRadius: 1.5,
+              bgcolor: "rgba(22, 163, 74, 0.08)",
+              borderRadius: 1,
               p: 1.5,
               border: "1px solid",
-              borderColor: "success.main",
+              borderColor: "rgba(22, 163, 74, 0.28)",
             }}
           >
             <Typography variant="caption" color="success.dark">
@@ -316,11 +355,11 @@ export function PaymentSection({ job }: { job: Job }) {
           <Box
             sx={{
               flex: 1,
-              bgcolor: "error.light",
-              borderRadius: 1.5,
+              bgcolor: "rgba(220, 38, 38, 0.08)",
+              borderRadius: 1,
               p: 1.5,
               border: "1px solid",
-              borderColor: "error.main",
+              borderColor: "rgba(220, 38, 38, 0.28)",
             }}
           >
             <Typography variant="caption" color="error.dark">
@@ -333,7 +372,6 @@ export function PaymentSection({ job }: { job: Job }) {
         </Box>
       )}
 
-      {/* Payment ref */}
       {(job.mpesaRef || job.paymentDate) && (
         <Box
           sx={{
@@ -343,7 +381,7 @@ export function PaymentSection({ job }: { job: Job }) {
             mt: 1,
             px: 1.5,
             py: 1,
-            bgcolor: "grey.100",
+            bgcolor: "rgba(31, 41, 51, 0.04)",
             borderRadius: 1,
           }}
         >
@@ -362,11 +400,21 @@ export function PaymentSection({ job }: { job: Job }) {
 export function InstallationSection({ job }: { job: Job }) {
   return (
     <>
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2.25 }} />
       <Section title="Installation Notes" />
-      <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-        {job.installationNotes || "—"}
-      </Typography>
+      <Box
+        sx={{
+          p: 1.5,
+          border: 1,
+          borderColor: "rgba(31, 41, 51, 0.08)",
+          borderRadius: 1,
+          bgcolor: "rgba(31, 41, 51, 0.03)",
+        }}
+      >
+        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+          {job.installationNotes || "No installation notes recorded."}
+        </Typography>
+      </Box>
 
       {job.issuesEncountered && (
         <>
@@ -385,11 +433,20 @@ export function InstallationSection({ job }: { job: Job }) {
         </>
       )}
 
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2.25 }} />
       <Box
-        sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}
+        sx={{
+          display: "flex",
+          gap: 1,
+          alignItems: "center",
+          flexWrap: "wrap",
+          p: 1.25,
+          border: 1,
+          borderColor: "rgba(31, 41, 51, 0.08)",
+          borderRadius: 1,
+        }}
       >
-        <Typography variant="body2">Difficulty:</Typography>
+        <Typography variant="body2" color="text.secondary">Difficulty</Typography>
         <Chip
           label={job.difficultyRating}
           size="small"
@@ -399,7 +456,7 @@ export function InstallationSection({ job }: { job: Job }) {
             fontWeight: 600,
           }}
         />
-        <Typography variant="body2" ml={2}>
+        <Typography variant="body2" sx={{ ml: { xs: 0, sm: 1 } }}>
           Follow-up: <strong>{job.followUpNeeded ? "Yes" : "No"}</strong>
         </Typography>
       </Box>

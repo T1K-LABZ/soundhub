@@ -1,4 +1,18 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Step, StepLabel, Stepper } from "@mui/material";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  Step,
+  StepLabel,
+  Stepper,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../auth/auth.store";
 import { useCreateJob, useUpdateJob } from "./sales.api";
@@ -114,6 +128,8 @@ export function NewSaleModal({ open, onClose, job }: Props) {
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const isEditing = !!job;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [step, setStep] = useState(0);
   const [step1, setStep1] = useState<Step1Data>(INIT_STEP1);
@@ -213,11 +229,59 @@ export function NewSaleModal({ open, onClose, job }: Props) {
   const isPending = createJob.isPending || updateJob.isPending;
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-      <DialogTitle>{isEditing ? "Edit Sale / Job" : "New Sale / Job"}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      fullWidth
+      maxWidth="md"
+      fullScreen={isMobile}
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: { xs: 0, sm: 2 },
+            overflow: "hidden",
+          },
+        },
+      }}
+    >
+      <DialogTitle
+        component="div"
+        sx={{
+          p: { xs: 2, sm: 2.5 },
+          borderBottom: 1,
+          borderColor: "divider",
+          bgcolor: "rgba(31, 41, 51, 0.02)",
+        }}
+      >
+        <Typography variant="h6" component="div" fontWeight={800}>
+          {isEditing ? "Edit Sale / Job" : "New Sale / Job"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Step {step + 1} of {STEPS.length}: {STEPS[step]}
+        </Typography>
+        <LinearProgress
+          variant="determinate"
+          value={((step + 1) / STEPS.length) * 100}
+          sx={{ mt: 1.5, height: 6, borderRadius: 3, display: { xs: "block", sm: "none" } }}
+        />
+      </DialogTitle>
 
-      <DialogContent dividers>
-        <Stepper activeStep={step} sx={{ mb: 3 }}>
+      <DialogContent
+        sx={{
+          p: { xs: 2, sm: 3 },
+          pb: { xs: 3, sm: 3 },
+          bgcolor: "#FFFFFF",
+        }}
+      >
+        <Stepper
+          activeStep={step}
+          alternativeLabel
+          sx={{
+            mb: 3,
+            display: { xs: "none", sm: "flex" },
+            "& .MuiStepLabel-label": { fontWeight: 700 },
+          }}
+        >
           {STEPS.map((label) => (
             <Step key={label}>
               <StepLabel>{label}</StepLabel>
@@ -239,31 +303,105 @@ export function NewSaleModal({ open, onClose, job }: Props) {
         {step === 3 && <NewSaleStep4 data={step4} onChange={setStep4} />}
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={handleClose} sx={{ mr: "auto" }}>
-          Cancel
-        </Button>
-
-        {step > 0 && (
-          <Button variant="outlined" onClick={() => setStep((s) => s - 1)}>
-            Back
-          </Button>
-        )}
-
-        {step < STEPS.length - 1 ? (
-          <Button variant="contained" onClick={() => setStep((s) => s + 1)}>
-            Next
-          </Button>
-        ) : (
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button variant="outlined" onClick={() => handleSave(false)} disabled={isPending}>
-              {isEditing ? "Update Job" : "Save Job"}
+      <DialogActions
+        sx={{
+          p: { xs: 1.5, sm: 2.5 },
+          borderTop: 1,
+          borderColor: "divider",
+          bgcolor: "#FFFFFF",
+          boxShadow: { xs: "0 -12px 28px rgba(31, 41, 51, 0.08)", sm: "none" },
+          display: "block",
+        }}
+      >
+        <Box
+          sx={{
+            display: { xs: "grid", sm: "flex" },
+            gridTemplateColumns: "1fr",
+            gap: 1,
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
+          {step < STEPS.length - 1 ? (
+            <Button
+              variant="contained"
+              onClick={() => setStep((s) => s + 1)}
+              fullWidth
+              sx={{
+                minHeight: 46,
+                fontWeight: 800,
+                order: { xs: 1, sm: 3 },
+                width: { sm: "auto" },
+                px: { sm: 3 },
+              }}
+            >
+              Continue
             </Button>
-            <Button variant="contained" onClick={() => handleSave(true)} disabled={isPending}>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={() => handleSave(true)}
+              disabled={isPending}
+              fullWidth
+              sx={{
+                minHeight: 46,
+                fontWeight: 800,
+                order: { xs: 1, sm: 4 },
+                width: { sm: "auto" },
+                px: { sm: 3 },
+              }}
+            >
               {isEditing ? "Update & Print" : "Save & Print"}
             </Button>
+          )}
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: step > 0 ? "1fr 1fr" : "1fr",
+              gap: 1,
+              order: { xs: 2, sm: 1 },
+              mr: { sm: "auto" },
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
+            <Button
+              onClick={handleClose}
+              variant="text"
+              color="inherit"
+              sx={{ minHeight: 40, color: "text.secondary", fontWeight: 700 }}
+            >
+              Cancel
+            </Button>
+
+            {step > 0 && (
+              <Button
+                variant="outlined"
+                onClick={() => setStep((s) => s - 1)}
+                sx={{ minHeight: 40, fontWeight: 700 }}
+              >
+                Back
+              </Button>
+            )}
           </Box>
-        )}
+
+          {step === STEPS.length - 1 && (
+            <Button
+              variant="outlined"
+              onClick={() => handleSave(false)}
+              disabled={isPending}
+              fullWidth
+              sx={{
+                minHeight: 42,
+                fontWeight: 700,
+                order: { xs: 3, sm: 3 },
+                width: { sm: "auto" },
+              }}
+            >
+              {isEditing ? "Update Only" : "Save Only"}
+            </Button>
+          )}
+        </Box>
       </DialogActions>
     </Dialog>
   );

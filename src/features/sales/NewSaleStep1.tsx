@@ -82,7 +82,7 @@ export function NewSaleStep1({ data, onChange }: Props) {
           onChange={(e) => set("carPlate", e.target.value.toUpperCase())}
           required
           placeholder="KDA 123A"
-          inputProps={{ style: { textTransform: "uppercase" } }}
+          slotProps={{ htmlInput: { style: { textTransform: "uppercase" } } }}
         />
       </Grid>
 
@@ -137,7 +137,7 @@ export function NewSaleStep1({ data, onChange }: Props) {
           onChange={(e) => set("carYear", e.target.value)}
           required
           placeholder="2021"
-          inputProps={{ min: 1990, max: 2030 }}
+          slotProps={{ htmlInput: { min: 1990, max: 2030 } }}
         />
       </Grid>
     </Grid>
