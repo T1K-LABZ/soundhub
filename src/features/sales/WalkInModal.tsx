@@ -1,7 +1,9 @@
-import { AddOutlined, DeleteOutlined } from "@mui/icons-material";
+import { DeleteOutlined, SearchOutlined } from "@mui/icons-material";
 import {
+  Avatar,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -9,15 +11,17 @@ import {
   Divider,
   Grid,
   IconButton,
+  InputAdornment,
   MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "../auth/auth.store";
-import { useItemsQuery } from "../inventory/inventory.api";
+import { useProductSearchQuery } from "../inventory/inventory.api";
 import { useCreateCounterSale } from "./sales.api";
 import { useStaffListQuery } from "../staff/staff.api";
+import type { InventoryItemResponse } from "../products/products.types";
 import type { JobProduct, PaymentMethod, PaymentStatus } from "./sales.types";
 import { formatKsh } from "./sales.utils";
 
@@ -43,7 +47,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
   "Card",
   "Bank Transfer",
 ];
-const PAYMENT_STATUSES: PaymentStatus[] = ["Paid", "Unpaid", "Deposit Made"];
+const PAYMENT_STATUSES: PaymentStatus[] = ["Paid", "Unpaid"];
 
 const INIT: WalkInForm = {
   customerName: "",
@@ -58,11 +62,20 @@ const INIT: WalkInForm = {
 
 export function WalkInModal({ open, onClose }: Props) {
   const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
-  const { data: apiProducts = [] } = useItemsQuery(storeId);
   const { data: staffList = [] } = useStaffListQuery(storeId);
   const createSale = useCreateCounterSale();
 
   const [form, setForm] = useState<WalkInForm>(INIT);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchInput), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const { data: searchResults = [], isFetching: searchLoading } =
+    useProductSearchQuery(storeId, debouncedSearch);
 
   function set<K extends keyof WalkInForm>(key: K, value: WalkInForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -70,36 +83,27 @@ export function WalkInModal({ open, onClose }: Props) {
 
   // ── Products ──────────────────────────────────────────────────────────────
 
-  function addProduct() {
-    if (apiProducts.length === 0) return;
-    const first = apiProducts[0];
-    const price = Number(first.sellingPrice) || 0;
+  function selectProduct(item: InventoryItemResponse) {
+    const alreadySelected = form.products.find((p) => p.productId === item.id);
+    if (alreadySelected) return;
+    const price = Number(item.sellingPrice) || 0;
     const line: JobProduct = {
-      productId: first.id,
-      productName: first.name,
+      productId: item.id,
+      productName: item.name,
       quantity: 1,
       unitPrice: price,
       lineTotal: price,
+      photoUrl: item.photoUrl,
     };
     set("products", [...form.products, line]);
+    setSearchInput("");
+    setDebouncedSearch("");
   }
 
-  function updateProduct(
-    idx: number,
-    field: keyof JobProduct,
-    value: string | number,
-  ) {
+  function updateProductQty(idx: number, qty: number) {
     const updated = form.products.map((p, i) => {
       if (i !== idx) return p;
-      const next = { ...p, [field]: value };
-      if (field === "productId") {
-        const found = apiProducts.find((ip) => ip.id === value);
-        if (found) {
-          next.productName = found.name;
-          next.unitPrice = Number(found.sellingPrice) || 0;
-        }
-      }
-      next.lineTotal = Number(next.quantity) * Number(next.unitPrice);
+      const next = { ...p, quantity: qty, lineTotal: qty * p.unitPrice };
       return next;
     });
     set("products", updated);
@@ -121,6 +125,8 @@ export function WalkInModal({ open, onClose }: Props) {
 
   function handleClose() {
     setForm(INIT);
+    setSearchInput("");
+    setDebouncedSearch("");
     onClose();
   }
 
@@ -183,67 +189,157 @@ export function WalkInModal({ open, onClose }: Props) {
         <Divider sx={{ my: 2 }} />
 
         {/* Products */}
-        <Typography variant="subtitle2" mb={1}>
+        <Typography variant="subtitle2" mb={1} fontWeight={800}>
           Products
         </Typography>
-        {form.products.map((p, idx) => (
-          <Grid
-            container
-            spacing={1}
-            key={idx}
-            sx={{ mb: 1 }}
-            alignItems="center"
-          >
-            <Grid size={{ xs: 12, sm: 5 }}>
-              <TextField
-                select
-                size="small"
-                fullWidth
-                value={p.productId}
-                onChange={(e) =>
-                  updateProduct(idx, "productId", e.target.value)
-                }
-              >
-                {apiProducts.map((ip) => (
-                  <MenuItem key={ip.id} value={ip.id}>
-                    {ip.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 4, sm: 2 }}>
-              <TextField
-                size="small"
-                type="number"
-                label="Qty"
-                fullWidth
-                value={p.quantity}
-                onChange={(e) =>
-                  updateProduct(idx, "quantity", Number(e.target.value))
-                }
-                inputProps={{ min: 1 }}
-              />
-            </Grid>
-            <Grid size={{ xs: 4, sm: 3 }}>
-              <Typography variant="body2" fontWeight={600}>
-                {formatKsh(Number(p.lineTotal) || 0)}
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 2, sm: 1 }}>
-              <IconButton size="small" onClick={() => removeProduct(idx)}>
-                <DeleteOutlined fontSize="small" />
-              </IconButton>
-            </Grid>
-          </Grid>
-        ))}
-        <Button
+
+        {/* Product search */}
+        <TextField
           size="small"
-          startIcon={<AddOutlined />}
-          onClick={addProduct}
-          sx={{ mb: 2 }}
-        >
-          Add Product
-        </Button>
+          placeholder="Search products by name..."
+          fullWidth
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchOutlined fontSize="small" color="action" />
+                </InputAdornment>
+              ),
+              endAdornment: searchLoading ? (
+                <InputAdornment position="end">
+                  <CircularProgress size={16} />
+                </InputAdornment>
+              ) : undefined,
+            },
+          }}
+          sx={{ mb: 1.5 }}
+        />
+
+        {/* Search results */}
+        {debouncedSearch && (
+          <Box
+            sx={{
+              maxHeight: 200,
+              overflow: "auto",
+              mb: 2,
+              border: 1,
+              borderColor: "rgba(31, 41, 51, 0.08)",
+              borderRadius: 1,
+            }}
+          >
+            {searchResults.length === 0 && !searchLoading ? (
+              <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
+                No products found
+              </Typography>
+            ) : (
+              searchResults.map((item) => (
+                <Box
+                  key={item.id}
+                  onClick={() => selectProduct(item)}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    p: 1.25,
+                    cursor: "pointer",
+                    transition: "background-color 0.15s",
+                    "&:hover": { bgcolor: "rgba(31, 41, 51, 0.04)" },
+                    borderBottom: 1,
+                    borderColor: "rgba(31, 41, 51, 0.06)",
+                    "&:last-child": { borderBottom: 0 },
+                  }}
+                >
+                  <Avatar
+                    src={item.photoUrl}
+                    alt={item.name}
+                    variant="rounded"
+                    sx={{ width: 44, height: 44, bgcolor: "rgba(31, 41, 51, 0.08)" }}
+                  >
+                    {item.name.charAt(0)}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={700} noWrap>
+                      {item.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Stock: {item.itemsInStock}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" fontWeight={700} color="primary" sx={{ whiteSpace: "nowrap" }}>
+                    {formatKsh(Number(item.sellingPrice))}
+                  </Typography>
+                </Box>
+              ))
+            )}
+          </Box>
+        )}
+
+        {/* Selected products */}
+        {form.products.length > 0 && (
+          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mb: 0.5, display: "block" }}>
+            Selected Products ({form.products.length})
+          </Typography>
+        )}
+        {form.products.map((p, idx) => (
+          <Box
+            key={idx}
+            sx={{
+              mb: 1.25,
+              p: 1.25,
+              border: 1,
+              borderColor: "rgba(31, 41, 51, 0.08)",
+              borderRadius: 1,
+              bgcolor: "rgba(31, 41, 51, 0.03)",
+            }}
+          >
+            <Grid container spacing={1} alignItems="center">
+              <Grid size={{ xs: 12, sm: 5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Avatar
+                    src={p.photoUrl}
+                    alt={p.productName}
+                    variant="rounded"
+                    sx={{ width: 36, height: 36, bgcolor: "rgba(31, 41, 51, 0.08)", flexShrink: 0 }}
+                  >
+                    {p.productName.charAt(0)}
+                  </Avatar>
+                  <Typography variant="body2" fontWeight={700} noWrap>
+                    {p.productName}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 4, sm: 2 }}>
+                <TextField
+                  size="small"
+                  type="number"
+                  label="Qty"
+                  fullWidth
+                  value={p.quantity}
+                  onChange={(e) => updateProductQty(idx, Number(e.target.value))}
+                  slotProps={{ htmlInput: { min: 1 } }}
+                />
+              </Grid>
+              <Grid size={{ xs: 4, sm: 3 }}>
+                <Typography variant="body2" fontWeight={800}>
+                  {formatKsh(Number(p.lineTotal) || 0)}
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 2, sm: 1 }} sx={{ textAlign: "right" }}>
+                <IconButton size="small" onClick={() => removeProduct(idx)}>
+                  <DeleteOutlined fontSize="small" />
+                </IconButton>
+              </Grid>
+            </Grid>
+          </Box>
+        ))}
+
+        {form.products.length === 0 && !debouncedSearch && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: "italic" }}>
+            Search for a product above to add it to this sale
+          </Typography>
+        )}
 
         {/* Total */}
         <Box

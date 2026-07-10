@@ -41,6 +41,7 @@ export type JobProduct = {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  photoUrl?: string;
 };
 
 // ── Core Job record ───────────────────────────────────────────────────────────
@@ -117,6 +118,46 @@ export type SalesFilters = {
   technician: string;
   jobStatus: string;
 };
+
+// ── Customer lookup ────────────────────────────────────────────────────────────
+
+export type CustomerCar = {
+  plate: string;
+  make: string;
+  model: string;
+  variant: string;
+  year: number;
+};
+
+export type CustomerLookupItem = {
+  id: string;
+  storeId: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  cars: CustomerCar[];
+  lastSeenAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ── Form validation ────────────────────────────────────────────────────────────
+
+export type StepErrors = Partial<
+  Record<
+    | "customerName"
+    | "customerPhone"
+    | "carPlate"
+    | "carMake"
+    | "carModel"
+    | "carYear"
+    | "serviceType"
+    | "technicianName"
+    | "jobStatus"
+    | "installationNotes",
+    string
+  >
+>;
 
 // ── Legacy POS types (kept for backward compatibility) ────────────────────────
 

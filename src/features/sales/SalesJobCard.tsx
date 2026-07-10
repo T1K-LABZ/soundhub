@@ -2,6 +2,7 @@ import {
   EditOutlined,
   ExpandLessOutlined,
   ExpandMoreOutlined,
+  PaymentsOutlined,
   VisibilityOutlined,
 } from "@mui/icons-material";
 import {
@@ -28,6 +29,7 @@ type Props = {
   onToggle: () => void;
   onView: () => void;
   onEdit: () => void;
+  onPayment?: () => void;
 };
 
 function StatusChip({ label, color }: { label: string; color: string }) {
@@ -53,6 +55,7 @@ export function SalesJobCard({
   onToggle,
   onView,
   onEdit,
+  onPayment,
 }: Props) {
   return (
     <Card
@@ -184,6 +187,23 @@ export function SalesJobCard({
               <VisibilityOutlined fontSize="small" />
             </IconButton>
           </Tooltip>
+          {job.paymentStatus !== "Paid" && onPayment && (
+            <Tooltip title="Update Payment">
+              <IconButton
+                size="small"
+                onClick={onPayment}
+                sx={{
+                  width: 34,
+                  height: 34,
+                  bgcolor: "rgba(247, 0, 0, 0.06)",
+                  color: "primary.main",
+                  "&:hover": { bgcolor: "rgba(247, 0, 0, 0.12)" },
+                }}
+              >
+                <PaymentsOutlined fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title="Edit">
             <IconButton
               size="small"

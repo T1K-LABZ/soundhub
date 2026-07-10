@@ -10,8 +10,8 @@ import {
 } from "@mui/material";
 import { useAuthStore } from "../auth/auth.store";
 import { useStaffListQuery } from "../staff/staff.api";
-import type { DifficultyRating, JobStatus } from "./sales.types";
-import { DIFFICULTY_COLOR, JOB_STATUS_COLOR } from "./sales.constants";
+import type { DifficultyRating, JobStatus, StepErrors } from "./sales.types";
+import { DIFFICULTY_COLOR } from "./sales.constants";
 
 export type Step4Data = {
   technicianName: string;
@@ -36,14 +36,20 @@ const DIFFICULTY_OPTIONS: DifficultyRating[] = ["Easy", "Medium", "Complex"];
 type Props = {
   data: Step4Data;
   onChange: (data: Step4Data) => void;
+  errors?: StepErrors;
+  triedToContinue?: boolean;
 };
 
-export function NewSaleStep4({ data, onChange }: Props) {
+export function NewSaleStep4({ data, onChange, errors = {}, triedToContinue = false }: Props) {
   const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
   const { data: staffList = [] } = useStaffListQuery(storeId);
 
   function set<K extends keyof Step4Data>(key: K, value: Step4Data[K]) {
     onChange({ ...data, [key]: value });
+  }
+
+  function fieldError(key: keyof StepErrors): string | undefined {
+    return triedToContinue ? errors[key] : undefined;
   }
 
   return (
@@ -59,6 +65,8 @@ export function NewSaleStep4({ data, onChange }: Props) {
             value={data.technicianName}
             onChange={(e) => set("technicianName", e.target.value)}
             required
+            error={!!fieldError("technicianName")}
+            helperText={fieldError("technicianName")}
           >
             {staffList.map((s) => (
               <MenuItem key={s.id} value={s.user.fullName}>
@@ -78,6 +86,8 @@ export function NewSaleStep4({ data, onChange }: Props) {
             value={data.jobStatus}
             onChange={(e) => set("jobStatus", e.target.value as JobStatus)}
             required
+            error={!!fieldError("jobStatus")}
+            helperText={fieldError("jobStatus")}
           >
             {JOB_STATUS_OPTIONS.map((s) => (
               <MenuItem key={s} value={s}>
@@ -99,6 +109,8 @@ export function NewSaleStep4({ data, onChange }: Props) {
             onChange={(e) => set("installationNotes", e.target.value)}
             placeholder="Describe the installation in detail…"
             required
+            error={!!fieldError("installationNotes")}
+            helperText={fieldError("installationNotes")}
           />
         </Grid>
 
@@ -193,6 +205,3 @@ export function NewSaleStep4({ data, onChange }: Props) {
     </Box>
   );
 }
-
-// Suppress unused import warning — JOB_STATUS_COLOR imported for future use
-void JOB_STATUS_COLOR;

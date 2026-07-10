@@ -32,6 +32,7 @@ import { NewSaleModal } from "./NewSaleModal";
 import { PlateSearchModal } from "./PlateSearchModal";
 import { ViewJobModal } from "./ViewJobModal";
 import { WalkInModal } from "./WalkInModal";
+import { QuickPaymentModal } from "./QuickPaymentModal";
 
 // ── Modal union type ──────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ type ModalType =
   | "plateSearch"
   | "manageServices"
   | "viewJob"
+  | "quickPayment"
   | null;
 
 // ── SalesPage ─────────────────────────────────────────────────────────────────
@@ -49,12 +51,14 @@ export function SalesPage() {
   const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
   const role = useAuthStore((s) => s.user?.role);
   const isOwner = role === "OWNER";
+  const canSell = role !== "VIEWER";
   const { data: allJobs = [] } = useJobsQuery(storeId);
   const { data: stats } = useSalesStatsQuery(storeId);
 
   const [filters, setFilters] = useState<SalesFilters>(DEFAULT_SALES_FILTERS);
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [modalInitialStep, setModalInitialStep] = useState(0);
   const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
 
   // Always derive selectedJob from the fresh API list so edits are reflected
@@ -72,7 +76,13 @@ export function SalesPage() {
 
   function handleEdit(job: Job) {
     setSelectedJobId(job.id);
+    setModalInitialStep(0);
     setOpenModal("newSale");
+  }
+
+  function handlePayment(job: Job) {
+    setSelectedJobId(job.id);
+    setOpenModal("quickPayment");
   }
 
   return (
@@ -93,7 +103,7 @@ export function SalesPage() {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: isOwner ? "1fr 1fr auto" : "1fr", sm: "auto auto auto" },
+                gridTemplateColumns: { xs: isOwner ? "1fr 1fr auto" : canSell ? "1fr 1fr" : "1fr", sm: "auto auto auto" },
                 gap: 1,
                 alignItems: "center",
                 width: { xs: "100%", sm: "auto" },
@@ -107,7 +117,7 @@ export function SalesPage() {
               >
                 New Job
               </Button>
-              {isOwner && (
+              {canSell && (
                 <Button
                   variant="outlined"
                   startIcon={<ShoppingBagOutlined />}
@@ -199,6 +209,7 @@ export function SalesPage() {
           jobs={filtered}
           onView={handleView}
           onEdit={handleEdit}
+          onPayment={handlePayment}
         />
       </Paper>
 
@@ -211,8 +222,10 @@ export function SalesPage() {
         onClose={() => {
           setOpenModal(null);
           setSelectedJobId(null);
+          setModalInitialStep(0);
         }}
         job={selectedJob}
+        initialStep={modalInitialStep}
       />
 
       <WalkInModal
@@ -238,6 +251,17 @@ export function SalesPage() {
           setSelectedJobId(null);
         }}
       />
+
+      {selectedJob && (
+        <QuickPaymentModal
+          open={openModal === "quickPayment"}
+          job={selectedJob}
+          onClose={() => {
+            setOpenModal(null);
+            setSelectedJobId(null);
+          }}
+        />
+      )}
     </Box>
   );
 }

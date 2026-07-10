@@ -134,6 +134,20 @@ export function useItemsQuery(storeId: string) {
   });
 }
 
+export function useProductSearchQuery(storeId: string, search: string) {
+  return useQuery({
+    queryKey: [...inventoryKeys.items(storeId), "search", search],
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: InventoryItemResponse[] }>(
+        "/inventory/items",
+        { params: { storeId, search } },
+      );
+      return res.data.data;
+    },
+    enabled: !!storeId && search.length > 0,
+  });
+}
+
 export function useCategoriesQuery(storeId: string) {
   return useQuery({
     queryKey: inventoryKeys.categories(storeId),

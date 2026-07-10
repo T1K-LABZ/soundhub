@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../../lib/axios";
-import type { Job, ServiceDefinition } from "./sales.types";
+import type { CustomerLookupItem, Job, ServiceDefinition } from "./sales.types";
 
 export type CreateServicePayload = {
   storeId: string;
@@ -18,6 +18,26 @@ const serviceKeys = {
   all: ["services"] as const,
   list: (storeId: string) => ["services", storeId] as const,
 };
+
+const customerKeys = {
+  lookup: (storeId: string, phone: string) => ["customers", storeId, phone] as const,
+};
+
+export function useCustomerLookupQuery(storeId: string, phone: string) {
+  const sanitized = phone.replace(/\s/g, "");
+  return useQuery({
+    queryKey: customerKeys.lookup(storeId, sanitized),
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: CustomerLookupItem[] }>(
+        "/customers",
+        { params: { storeId, search: sanitized } },
+      );
+      const items = res.data.data;
+      return items.length > 0 ? items[0] : null;
+    },
+    enabled: !!storeId && sanitized.length >= 10,
+  });
+}
 
 export function useServicesQuery(storeId: string, search?: string) {
   return useQuery({
