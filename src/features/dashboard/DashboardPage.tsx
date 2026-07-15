@@ -7,7 +7,6 @@ import {
 import {
   Avatar,
   Box,
-  Button,
   Chip,
   CircularProgress,
   Divider,
@@ -100,31 +99,62 @@ export function DashboardPage() {
           </Box>
 
           {/* Quick Actions */}
-          <Box sx={{ display: "flex", gap: 1.5, mb: 4 }}>
-            <Button
-              variant="contained"
-              startIcon={<PointOfSaleOutlined />}
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.5, mb: 4 }}>
+            <Paper
               onClick={() => setOpenModal("sale")}
-              sx={{ px: 3, py: 1 }}
+              sx={{
+                p: { xs: 2, sm: 2.5 },
+                borderRadius: 3,
+                bgcolor: "#F70000",
+                color: "white",
+                cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(247, 0, 0, 0.25)",
+                transition: "transform 0.15s, box-shadow 0.15s",
+                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 6px 20px rgba(247, 0, 0, 0.35)" },
+              }}
             >
-              New Sale
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<SpeakerOutlined />}
+              <Box sx={{ width: { xs: 36, sm: 40 }, height: { xs: 36, sm: 40 }, borderRadius: 2, bgcolor: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5 }}>
+                <PointOfSaleOutlined fontSize="small" />
+              </Box>
+              <Typography variant="subtitle2" fontWeight={700}>New Sale</Typography>
+            </Paper>
+            <Paper
               onClick={() => setOpenModal("product")}
-              sx={{ px: 3, py: 1 }}
+              sx={{
+                p: { xs: 2, sm: 2.5 },
+                borderRadius: 3,
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
+                cursor: "pointer",
+                transition: "transform 0.15s",
+                "&:hover": { transform: "translateY(-2px)" },
+              }}
             >
-              Add Product
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<Inventory2Outlined />}
+              <Box sx={{ width: { xs: 36, sm: 40 }, height: { xs: 36, sm: 40 }, borderRadius: 2, bgcolor: "#ffebee", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5, color: "#F70000" }}>
+                <SpeakerOutlined fontSize="small" />
+              </Box>
+              <Typography variant="subtitle2" fontWeight={700} color="#F70000">Add Product</Typography>
+            </Paper>
+            <Paper
               onClick={() => setOpenModal("inventory")}
-              sx={{ px: 3, py: 1 }}
+              sx={{
+                p: { xs: 2, sm: 2.5 },
+                borderRadius: 3,
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
+                cursor: "pointer",
+                transition: "transform 0.15s",
+                "&:hover": { transform: "translateY(-2px)" },
+                gridColumn: { xs: "span 2", sm: "span 1" },
+              }}
             >
-              Check Item
-            </Button>
+              <Box sx={{ width: { xs: 36, sm: 40 }, height: { xs: 36, sm: 40 }, borderRadius: 2, bgcolor: "#ffebee", display: "flex", alignItems: "center", justifyContent: "center", mb: 1.5, color: "#F70000" }}>
+                <Inventory2Outlined fontSize="small" />
+              </Box>
+              <Typography variant="subtitle2" fontWeight={700} color="#F70000">Check Item</Typography>
+            </Paper>
           </Box>
 
           {/* Stat cards */}

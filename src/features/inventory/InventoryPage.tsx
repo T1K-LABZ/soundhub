@@ -31,6 +31,7 @@ import { CategoryModal } from "../products/CategoryModal";
 import { getCategories, getItemByBarcode, getItems, mapItemToProduct } from "../products/products.api";
 import type { Category, Product } from "../products/products.types";
 import { useBatchesQuery } from "./inventory.api";
+import type { BatchItem } from "./inventory.api";
 import { ProductStockCard } from "./ProductStockCard";
 import { BatchList } from "./BatchList";
 import { QuickReceiveModal } from "./QuickReceiveModal";
@@ -63,6 +64,7 @@ export function InventoryPage() {
   const [receiveProduct, setReceiveProduct] = useState<Product | null>(null);
   const [bulkReceiveOpen, setBulkReceiveOpen] = useState(false);
   const [createIncomingOpen, setCreateIncomingOpen] = useState(false);
+  const [editingBatch, setEditingBatch] = useState<BatchItem | null>(null);
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
 
   const isEditing = Boolean(editProductId);
@@ -169,7 +171,7 @@ export function InventoryPage() {
               variant="outlined"
               startIcon={<CategoryOutlined />}
               onClick={() => setCategoryModalOpen(true)}
-              sx={{ minHeight: 40 }}
+              sx={{ minHeight: 40, borderRadius: 2 }}
             >
               Categories
             </Button>
@@ -177,7 +179,7 @@ export function InventoryPage() {
               variant="contained"
               startIcon={<AddOutlined />}
               onClick={() => setAddProductOpen(true)}
-              sx={{ minHeight: 40 }}
+              sx={{ minHeight: 40, borderRadius: 2 }}
             >
               Add Product
             </Button>
@@ -197,35 +199,66 @@ export function InventoryPage() {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(4, auto)" },
+            gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, auto)" },
             gap: 1,
-            mb: 1.5,
+            mb: 2,
           }}
         >
-          <Chip icon={<Inventory2Outlined />} label={`${products.length.toLocaleString()} Products`} variant="outlined" sx={{ justifyContent: "flex-start" }} />
-          <Chip icon={<CallReceivedOutlined />} label={`${lowStockCount.toLocaleString()} Low Stock`} color="warning" variant="outlined" sx={{ justifyContent: "flex-start" }} />
-          <Chip icon={<Inventory2Outlined />} label={`${outOfStockCount.toLocaleString()} Out of Stock`} color="error" variant="outlined" sx={{ justifyContent: "flex-start" }} />
-          <Chip icon={<LocalShippingOutlined />} label={`${totalIncoming.toLocaleString()} Incoming`} color="info" variant="outlined" sx={{ justifyContent: "flex-start" }} />
+          {[
+            { icon: <Inventory2Outlined />, label: "Products", value: products.length, color: "#1976d2", bg: "#e3f2fd" },
+            { icon: <CallReceivedOutlined />, label: "Low Stock", value: lowStockCount, color: "#ed6c02", bg: "#fff3e0" },
+            { icon: <Inventory2Outlined />, label: "Out of Stock", value: outOfStockCount, color: "#d32f2f", bg: "#ffebee" },
+            { icon: <LocalShippingOutlined />, label: "Incoming", value: totalIncoming, color: "#0288d1", bg: "#e1f5fe" },
+          ].map((stat) => (
+            <Box
+              key={stat.label}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                px: 2,
+                py: 1.5,
+                borderRadius: 3,
+                border: "1.5px solid",
+                borderColor: `${stat.color}33`,
+                bgcolor: "background.paper",
+              }}
+            >
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  bgcolor: stat.bg,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: stat.color,
+                  "& svg": { fontSize: 18 },
+                }}
+              >
+                {stat.icon}
+              </Box>
+              <Typography variant="body2" fontWeight={700} color="text.primary">
+                {stat.value.toLocaleString()} {stat.label}
+              </Typography>
+            </Box>
+          ))}
         </Box>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "minmax(260px, 1fr) 180px 180px" },
-            gap: 1.25,
-          }}
-        >
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
           <TextField
             placeholder="Search by name or barcode..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             size="small"
             fullWidth
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
             slotProps={{
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchOutlined fontSize="small" />
+                    <SearchOutlined fontSize="small" color="action" />
                   </InputAdornment>
                 ),
                 endAdornment: search ? undefined : (
@@ -240,34 +273,38 @@ export function InventoryPage() {
               },
             }}
           />
-          <TextField
-            select
-            label="Category"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            size="small"
-            fullWidth
-          >
-            <MenuItem value="all">All Categories</MenuItem>
-            {categories.map((cat) => (
-              <MenuItem key={cat.id} value={cat.name}>
-                {cat.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            label="Stock Status"
-            value={stockFilter}
-            onChange={(e) => setStockFilter(e.target.value)}
-            size="small"
-            fullWidth
-          >
-            <MenuItem value="all">All Stock</MenuItem>
-            <MenuItem value="in">In Stock</MenuItem>
-            <MenuItem value="low">Low Stock</MenuItem>
-            <MenuItem value="out">Out of Stock</MenuItem>
-          </TextField>
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.25 }}>
+            <TextField
+              select
+              label="Category"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              size="small"
+              fullWidth
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+            >
+              <MenuItem value="all">All Categories</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.name}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              label="Stock Status"
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value)}
+              size="small"
+              fullWidth
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+            >
+              <MenuItem value="all">All Stock</MenuItem>
+              <MenuItem value="in">In Stock</MenuItem>
+              <MenuItem value="low">Low Stock</MenuItem>
+              <MenuItem value="out">Out of Stock</MenuItem>
+            </TextField>
+          </Box>
         </Box>
       </Paper>
 
@@ -319,7 +356,7 @@ export function InventoryPage() {
             <Button
               variant="outlined"
               startIcon={<LocalShippingOutlined />}
-              onClick={() => setCreateIncomingOpen(true)}
+              onClick={() => { setEditingBatch(null); setCreateIncomingOpen(true); }}
               sx={{ minHeight: 40 }}
             >
               Create Incoming
@@ -408,9 +445,9 @@ export function InventoryPage() {
             } />
           </Tabs>
 
-          {batchTab === 0 && <BatchList batches={inTransitBatches.items} />}
-          {batchTab === 1 && <BatchList batches={pendingBatches.items} />}
-          {batchTab === 2 && <BatchList batches={activeBatches.items} />}
+          {batchTab === 0 && <BatchList batches={inTransitBatches.items} onEdit={setEditingBatch} />}
+          {batchTab === 1 && <BatchList batches={pendingBatches.items} onEdit={setEditingBatch} />}
+          {batchTab === 2 && <BatchList batches={activeBatches.items} onEdit={setEditingBatch} />}
         </Box>
       )}
 
@@ -432,7 +469,14 @@ export function InventoryPage() {
         onConfirm={handleQuickReceive}
       />
       <ReceiveStockModal open={bulkReceiveOpen} onClose={() => setBulkReceiveOpen(false)} />
-      <CreateIncomingModal open={createIncomingOpen} onClose={() => setCreateIncomingOpen(false)} />
+      <CreateIncomingModal
+        open={createIncomingOpen || Boolean(editingBatch)}
+        editingBatch={editingBatch}
+        onClose={() => {
+          setCreateIncomingOpen(false);
+          setEditingBatch(null);
+        }}
+      />
       <ProductDetailModal
         product={viewProduct}
         open={Boolean(viewProduct)}

@@ -114,10 +114,11 @@ export type CreateIncomingForm = {
 export type CreateIncomingBatchItem = {
   id: string;
   productId: string;
+  productName?: string;
   quantity: number;
   buyingPrice: number;
   sellingPrice: number;
-  status: "PENDING" | "ACTIVE";
+  status: "IN_TRANSIT" | "PENDING" | "ACTIVE";
 };
 
 // ── Chart types ──────────────────────────────────────────────────────────────

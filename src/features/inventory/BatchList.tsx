@@ -1,5 +1,7 @@
 import {
   CheckCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
   ExpandLessOutlined,
   ExpandMoreOutlined,
   LocalShippingOutlined,
@@ -19,16 +21,18 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { useUpdateBatch } from "./inventory.api";
+import { useDeleteBatch, useUpdateBatch } from "./inventory.api";
 import type { BatchItem, BatchStatus } from "./inventory.api";
 import { useAuthStore } from "../auth/auth.store";
 import { formatKsh } from "../sales/sales.utils";
 
 type Props = {
   batches: BatchItem[];
+  onEdit?: (batch: BatchItem) => void;
 };
 
 const STATUS_CONFIG: Record<string, { color: string; label: string; bg: string }> = {
@@ -37,7 +41,7 @@ const STATUS_CONFIG: Record<string, { color: string; label: string; bg: string }
   ACTIVE: { color: "#2E7D32", label: "Active", bg: "linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)" },
 };
 
-export function BatchList({ batches }: Props) {
+export function BatchList({ batches, onEdit }: Props) {
   const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
 
   if (batches.length === 0) {
@@ -54,16 +58,18 @@ export function BatchList({ batches }: Props) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
       {batches.map((batch) => (
-        <BatchCard key={batch.id} batch={batch} storeId={storeId} />
+        <BatchCard key={batch.id} batch={batch} storeId={storeId} onEdit={onEdit} />
       ))}
     </Box>
   );
 }
 
-function BatchCard({ batch, storeId }: { batch: BatchItem; storeId: string }) {
+function BatchCard({ batch, storeId, onEdit }: { batch: BatchItem; storeId: string; onEdit?: (batch: BatchItem) => void }) {
   const [expanded, setExpanded] = useState(false);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmActivateOpen, setConfirmActivateOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const updateBatch = useUpdateBatch(batch.id);
+  const deleteBatch = useDeleteBatch();
   const statusCfg = STATUS_CONFIG[batch.status] || { color: "#9E9E9E", label: batch.status, bg: "#F5F5F5" };
   const buyingPrice = Number(batch.buyingPrice) || 0;
   const sellingPrice = Number(batch.sellingPrice) || 0;
@@ -73,9 +79,8 @@ function BatchCard({ batch, storeId }: { batch: BatchItem; storeId: string }) {
 
   function handleActivate() {
     if (isInTransit) {
-      setConfirmDialogOpen(true);
+      setConfirmActivateOpen(true);
     } else {
-      // PENDING — activate directly (no irreversible warning needed)
       updateBatch.mutate({ storeId, status: "ACTIVE" as BatchStatus });
     }
   }
@@ -83,7 +88,14 @@ function BatchCard({ batch, storeId }: { batch: BatchItem; storeId: string }) {
   function handleConfirmActivate() {
     updateBatch.mutate(
       { storeId, status: "ACTIVE" as BatchStatus },
-      { onSuccess: () => setConfirmDialogOpen(false) },
+      { onSuccess: () => setConfirmActivateOpen(false) },
+    );
+  }
+
+  function handleDelete() {
+    deleteBatch.mutate(
+      { batchId: batch.id, storeId },
+      { onSuccess: () => setConfirmDeleteOpen(false) },
     );
   }
 
@@ -216,9 +228,9 @@ function BatchCard({ batch, storeId }: { batch: BatchItem; storeId: string }) {
                 </Alert>
               )}
 
-              {/* Activate button */}
-              {canActivate && (
-                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              {/* Actions */}
+              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                {canActivate && (
                   <Button
                     size="small"
                     variant="contained"
@@ -229,15 +241,44 @@ function BatchCard({ batch, storeId }: { batch: BatchItem; storeId: string }) {
                   >
                     Activate Stock
                   </Button>
-                </Box>
-              )}
+                )}
+                <Tooltip title="Edit">
+                  <IconButton
+                    size="small"
+                    onClick={() => onEdit?.(batch)}
+                    sx={{
+                      width: 34,
+                      height: 34,
+                      bgcolor: "rgba(31, 41, 51, 0.04)",
+                      "&:hover": { color: "primary.main", bgcolor: "rgba(247, 0, 0, 0.08)" },
+                    }}
+                  >
+                    <EditOutlined fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete">
+                  <IconButton
+                    size="small"
+                    onClick={() => setConfirmDeleteOpen(true)}
+                    sx={{
+                      width: 34,
+                      height: 34,
+                      color: "error.main",
+                      bgcolor: "rgba(211, 47, 47, 0.06)",
+                      "&:hover": { bgcolor: "rgba(211, 47, 47, 0.12)" },
+                    }}
+                  >
+                    <DeleteOutlined fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
           </Collapse>
         </CardContent>
       </Card>
 
-      {/* IN_TRANSIT confirmation dialog */}
-      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
+      {/* Activate confirmation dialog */}
+      <Dialog open={confirmActivateOpen} onClose={() => setConfirmActivateOpen(false)}>
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <WarningAmberOutlined color="warning" />
           Confirm Activation
@@ -254,7 +295,7 @@ function BatchCard({ batch, storeId }: { batch: BatchItem; storeId: string }) {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setConfirmActivateOpen(false)}>Cancel</Button>
           <Button
             variant="contained"
             color="warning"
@@ -263,6 +304,37 @@ function BatchCard({ batch, storeId }: { batch: BatchItem; storeId: string }) {
             disabled={updateBatch.isPending}
           >
             Yes, Activate Stock
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <WarningAmberOutlined color="error" />
+          Confirm Delete
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" mb={1}>
+            Are you sure you want to delete this batch?
+          </Typography>
+          <Typography variant="body2" fontWeight={600}>
+            {batch.product?.name} — {batch.supplier} ({batch.quantityReceived} units)
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<DeleteOutlined />}
+            onClick={handleDelete}
+            disabled={deleteBatch.isPending}
+          >
+            {deleteBatch.isPending ? "Deleting..." : "Yes, Delete"}
           </Button>
         </DialogActions>
       </Dialog>

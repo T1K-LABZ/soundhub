@@ -1,24 +1,29 @@
-import { AddOutlined } from "@mui/icons-material";
+import { AddOutlined, WarningAmberOutlined } from "@mui/icons-material";
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
   Grid,
+  LinearProgress,
+  MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../auth/auth.store";
 import { BarcodeScannerDialog } from "../../components/ui/BarcodeScannerDialog";
-import { useItemsQuery, useReceiveStock } from "./inventory.api";
+import { useItemsQuery, useReceiveStock, useUpdateBatch } from "./inventory.api";
+import { useStaffListQuery } from "../staff/staff.api";
+import type { BatchItem } from "./inventory.api";
 import type { CreateIncomingBatchItem, CreateIncomingForm } from "./inventory.types";
 import { IncomingBatchRow } from "./IncomingBatchRow";
 
-type Props = { open: boolean; onClose: () => void };
+type Props = { open: boolean; onClose: () => void; editingBatch?: BatchItem | null };
 
 function makeEmptyItem(): CreateIncomingBatchItem {
   return {
@@ -28,6 +33,27 @@ function makeEmptyItem(): CreateIncomingBatchItem {
     buyingPrice: 0,
     sellingPrice: 0,
     status: "IN_TRANSIT",
+  };
+}
+
+function batchToForm(batch: BatchItem): CreateIncomingForm {
+  return {
+    supplier: batch.supplier || "",
+    expectedDate: batch.expectedDate?.split("T")[0] || "",
+    trackingRef: batch.trackingRef || "",
+    notes: batch.notes || "",
+    createdBy: "",
+    items: [
+      {
+        id: crypto.randomUUID(),
+        productId: batch.productId,
+        productName: batch.product?.name || "",
+        quantity: batch.quantityReceived,
+        buyingPrice: Number(batch.buyingPrice) || 0,
+        sellingPrice: Number(batch.sellingPrice) || 0,
+        status: batch.status,
+      },
+    ],
   };
 }
 
@@ -42,12 +68,27 @@ const EMPTY_FORM: CreateIncomingForm = {
   items: [makeEmptyItem()],
 };
 
-export function CreateIncomingModal({ open, onClose }: Props) {
+export function CreateIncomingModal({ open, onClose, editingBatch }: Props) {
   const storeId = useAuthStore((s) => s.user?.storeId) ?? "";
   const { data: products = [] } = useItemsQuery(storeId);
+  const { data: staffList = [] } = useStaffListQuery(storeId);
   const receiveStock = useReceiveStock();
+  const updateBatch = useUpdateBatch(editingBatch?.id ?? "noop");
+  const isEditing = !!editingBatch;
+  const isPending = receiveStock.isPending || updateBatch.isPending;
   const [form, setForm] = useState<CreateIncomingForm>(EMPTY_FORM);
   const [scanningItemId, setScanningItemId] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const latestItemRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editingBatch) {
+      setForm(batchToForm(editingBatch));
+    } else {
+      setForm(EMPTY_FORM);
+    }
+    setScanningItemId(null);
+  }, [editingBatch, open]);
 
   function setHeader<K extends keyof Omit<CreateIncomingForm, "items">>(
     k: K,
@@ -63,9 +104,23 @@ export function CreateIncomingModal({ open, onClose }: Props) {
     }));
   }
 
+  const latestItemIdRef = useRef<string | null>(null);
+
   function handleAddItem() {
-    setForm((p) => ({ ...p, items: [...p.items, makeEmptyItem()] }));
+    const newItem = makeEmptyItem();
+    latestItemIdRef.current = newItem.id;
+    setForm((p) => ({ ...p, items: [...p.items, newItem] }));
   }
+
+  useEffect(() => {
+    if (latestItemIdRef.current) {
+      const el = document.getElementById(`batch-item-${latestItemIdRef.current}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        latestItemIdRef.current = null;
+      }
+    }
+  }, [form.items.length]);
 
   function handleRemoveItem(itemId: string) {
     setForm((p) => ({ ...p, items: p.items.filter((it) => it.id !== itemId) }));
@@ -78,7 +133,15 @@ export function CreateIncomingModal({ open, onClose }: Props) {
       setForm((p) => ({
         ...p,
         items: p.items.map((it) =>
-          it.id === scanningItemId ? { ...it, productId: product.id } : it,
+          it.id === scanningItemId
+            ? {
+                ...it,
+                productId: product.id,
+                productName: product.name,
+                buyingPrice: product.costPrice ?? 0,
+                sellingPrice: product.sellingPrice ?? 0,
+              }
+            : it,
         ),
       }));
     }
@@ -86,24 +149,52 @@ export function CreateIncomingModal({ open, onClose }: Props) {
   }
 
   function handleSubmit() {
-    receiveStock.mutate(
-      {
-        storeId,
-        supplier: form.supplier,
-        expectedDate: form.expectedDate,
-        trackingRef: form.trackingRef,
-        notes: form.notes,
-        createdBy: form.createdBy,
-        items: form.items.map((it) => ({
-          productId: it.productId,
-          quantity: it.quantity,
-          buyingPrice: it.buyingPrice,
-          sellingPrice: it.sellingPrice,
-          status: it.status,
-        })),
-      },
-      { onSuccess: handleClose },
-    );
+    const toReceiveItemPayload = (it: CreateIncomingBatchItem) => ({
+      productId: it.productId,
+      quantity: it.quantity,
+      buyingPrice: it.buyingPrice,
+      sellingPrice: it.sellingPrice,
+      status: it.status,
+    });
+
+    if (isEditing && editingBatch) {
+      const [item] = form.items;
+
+      void (async () => {
+        try {
+          await updateBatch.mutateAsync({
+            storeId,
+            productId: item.productId,
+            supplier: form.supplier,
+            expectedDate: form.expectedDate,
+            trackingRef: form.trackingRef,
+            notes: form.notes,
+            quantity: item.quantity,
+            status: item.status,
+            buyingPrice: item.buyingPrice,
+            sellingPrice: item.sellingPrice,
+            items: form.items.map(toReceiveItemPayload),
+          });
+
+          handleClose();
+        } catch {
+          // React Query keeps the mutation error state for the UI/devtools.
+        }
+      })();
+    } else {
+      receiveStock.mutate(
+        {
+          storeId,
+          supplier: form.supplier,
+          expectedDate: form.expectedDate,
+          trackingRef: form.trackingRef,
+          notes: form.notes,
+          createdBy: form.createdBy,
+          items: form.items.map(toReceiveItemPayload),
+        },
+        { onSuccess: handleClose },
+      );
+    }
   }
 
   function handleClose() {
@@ -135,8 +226,9 @@ export function CreateIncomingModal({ open, onClose }: Props) {
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Create Incoming Stock</DialogTitle>
+      <Dialog open={open} onClose={isPending ? undefined : handleClose} maxWidth="sm" fullWidth>
+        {isPending && <LinearProgress />}
+        <DialogTitle>{isEditing ? "Edit Incoming Stock" : "Create Incoming Stock"}</DialogTitle>
 
         <DialogContent
           dividers
@@ -188,12 +280,22 @@ export function CreateIncomingModal({ open, onClose }: Props) {
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
+                  select
                   label="Created By"
                   value={form.createdBy}
                   onChange={(e) => setHeader("createdBy", e.target.value)}
                   fullWidth
                   size="small"
-                />
+                >
+                  <MenuItem value="">
+                    <em>Select staff</em>
+                  </MenuItem>
+                  {staffList.map((s) => (
+                    <MenuItem key={s.id} value={s.user.fullName}>
+                      {s.user.fullName}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <TextField
@@ -219,6 +321,11 @@ export function CreateIncomingModal({ open, onClose }: Props) {
                 justifyContent: "space-between",
                 alignItems: "center",
                 mb: 1.5,
+                position: "sticky",
+                top: 0,
+                bgcolor: "background.paper",
+                zIndex: 1,
+                py: 1,
               }}
             >
               <Typography
@@ -239,16 +346,18 @@ export function CreateIncomingModal({ open, onClose }: Props) {
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {form.items.map((item, idx) => (
-                <IncomingBatchRow
-                  key={item.id}
-                  item={item}
-                  index={idx}
-                  products={products}
-                  canRemove={form.items.length > 1}
-                  onScanClick={(id) => setScanningItemId(id)}
-                  onChange={handleItemChange}
-                  onRemove={handleRemoveItem}
-                />
+                <Box key={item.id} id={`batch-item-${item.id}`} ref={item.id === latestItemIdRef.current ? latestItemRef : undefined}>
+                  <IncomingBatchRow
+                    item={item}
+                    index={idx}
+                    products={products}
+                    storeId={storeId}
+                    canRemove={form.items.length > 1}
+                    onScanClick={(id) => setScanningItemId(id)}
+                    onChange={handleItemChange}
+                    onRemove={handleRemoveItem}
+                  />
+                </Box>
               ))}
             </Box>
           </Box>
@@ -286,13 +395,16 @@ export function CreateIncomingModal({ open, onClose }: Props) {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose} disabled={isPending}>Cancel</Button>
           <Button
             variant="contained"
-            onClick={handleSubmit}
-            disabled={!isValid}
+            onClick={isEditing ? handleSubmit : () => setConfirmOpen(true)}
+            disabled={!isValid || isPending}
+            startIcon={isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
           >
-            Create Incoming Record
+            {isPending
+              ? (isEditing ? "Saving…" : "Creating…")
+              : (isEditing ? "Save Changes" : "Create Incoming Record")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -302,6 +414,64 @@ export function CreateIncomingModal({ open, onClose }: Props) {
         onDetected={handleBarcodeDetected}
         onClose={() => setScanningItemId(null)}
       />
+
+      {/* Confirm create dialog */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <WarningAmberOutlined color="warning" />
+          Confirm Create Incoming Stock
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" mb={1}>
+            You are about to create an incoming stock record with the following details:
+          </Typography>
+          <Box sx={{ bgcolor: "grey.50", borderRadius: 2, p: 1.5, mb: 1.5, border: "1px solid", borderColor: "divider" }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              <Typography variant="body2" color="text.secondary">Supplier</Typography>
+              <Typography variant="body2" fontWeight={600}>{form.supplier}</Typography>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              <Typography variant="body2" color="text.secondary">Expected Date</Typography>
+              <Typography variant="body2" fontWeight={600}>{form.expectedDate}</Typography>
+            </Box>
+            {form.trackingRef && (
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                <Typography variant="body2" color="text.secondary">Tracking Ref</Typography>
+                <Typography variant="body2" fontWeight={600}>{form.trackingRef}</Typography>
+              </Box>
+            )}
+            {form.createdBy && (
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                <Typography variant="body2" color="text.secondary">Created By</Typography>
+                <Typography variant="body2" fontWeight={600}>{form.createdBy}</Typography>
+              </Box>
+            )}
+          </Box>
+          <Typography variant="body2" fontWeight={600} mb={0.5}>
+            {form.items.length} item{form.items.length > 1 ? "s" : ""} — {totalUnits.toLocaleString()} units total
+          </Typography>
+          <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Cost: KSh {totalCostValue.toLocaleString()}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Retail: KSh {totalRetailValue.toLocaleString()}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Go Back</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => { setConfirmOpen(false); handleSubmit(); }}
+            disabled={isPending}
+            startIcon={isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
+          >
+            {isPending ? "Creating…" : "Yes, Create"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

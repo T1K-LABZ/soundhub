@@ -77,11 +77,16 @@ export type BatchItem = {
 
 export type UpdateBatchPayload = {
   storeId?: string;
+  productId?: string;
+  supplier?: string;
+  expectedDate?: string;
+  trackingRef?: string;
   buyingPrice?: number;
   sellingPrice?: number;
   quantity?: number;
   notes?: string;
   status?: BatchStatus;
+  items?: ReceiveStockPayload["items"];
 };
 
 export type StockMovement = {
@@ -257,6 +262,21 @@ export function useActivateBatch(batchId: string) {
         { status },
       );
       return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useDeleteBatch() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ batchId, storeId }: { batchId: string; storeId: string }) => {
+      await apiClient.delete(`/inventory/batches/${batchId}`, {
+        params: { storeId },
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inventoryKeys.all });
