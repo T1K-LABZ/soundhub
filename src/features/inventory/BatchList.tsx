@@ -10,6 +10,7 @@ import {
 } from "@mui/icons-material";
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   Card,
@@ -114,23 +115,21 @@ function BatchCard({ batch, storeId, onEdit }: { batch: BatchItem; storeId: stri
         <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
           {/* Compact header */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            {/* Product initial badge */}
-            <Box
+            {/* Product photo */}
+            <Avatar
+              src={batch.product?.photoUrl}
+              alt={batch.product?.name}
+              variant="rounded"
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 2,
-                background: statusCfg.bg,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
+                bgcolor: statusCfg.bg,
+                color: statusCfg.color,
+                "& img": { objectFit: "cover" },
               }}
             >
-              <Typography variant="subtitle1" fontWeight={700} color={statusCfg.color}>
-                {(batch.product?.name || "?")[0]}
-              </Typography>
-            </Box>
+              {(batch.product?.name || "?")[0]}
+            </Avatar>
 
             {/* Main info */}
             <Box sx={{ flex: 1, minWidth: 0 }}>
