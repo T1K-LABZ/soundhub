@@ -16,16 +16,8 @@ import type { ApiResponse } from "../auth/auth.types";
 import { useAuthStore } from "../auth/auth.store";
 import { BarcodeField } from "./BarcodeField";
 import { PhotoUpload } from "./PhotoUpload";
-import { createProduct, updateProduct } from "./products.api";
+import { createProduct, getCategories, updateProduct } from "./products.api";
 import type { CreateProductPayload, Product, ProductFormValues } from "./products.types";
-
-const CATEGORIES = [
-  "Speaker", "Subwoofer", "Powered Subwoofer", "Amplifier", "Mono Block Amplifier",
-  "Stereo Amplifier (4 Channel)", "5 Channel Amplifier", "Head Unit", "Equalizer",
-  "Signal Processor", "Tweeter", "SPL Series",
-  "Wiring Kit", "Speaker Cable", "Power Cable", "Signal Cable",
-  "Sound Deadening", "Accessories", "Other",
-] as const;
 
 const EMPTY_FORM: ProductFormValues = {
   name: "", category: "Speaker", description: "", barcode: "",
@@ -43,7 +35,16 @@ export function AddProductModal({ open, onClose, productId, product }: Props) {
   const [preview, setPreview] = useState<string | null>(null);
   const [existingPhotoUrl, setExistingPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
   const isEditMode = Boolean(productId);
+
+  useEffect(() => {
+    if (open && storeId) {
+      getCategories(storeId).then(({ data }) => {
+        setCategories(data.map((c) => c.name));
+      }).catch(() => {});
+    }
+  }, [open, storeId]);
 
   useEffect(() => {
     if (!open) {
@@ -148,7 +149,7 @@ export function AddProductModal({ open, onClose, productId, product }: Props) {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField select label="Category" value={form.category} onChange={(e) => set("category", e.target.value)} fullWidth required>
-                {CATEGORIES.map((cat) => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
+                {categories.map((cat) => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
               </TextField>
             </Grid>
             <Grid size={{ xs: 12 }}>

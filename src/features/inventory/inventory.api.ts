@@ -136,6 +136,7 @@ export function useItemsQuery(storeId: string) {
       return res.data.data;
     },
     enabled: !!storeId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -150,6 +151,7 @@ export function useProductSearchQuery(storeId: string, search: string) {
       return res.data.data;
     },
     enabled: !!storeId && search.length > 0,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -164,6 +166,7 @@ export function useCategoriesQuery(storeId: string) {
       return res.data.data;
     },
     enabled: !!storeId,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -231,6 +234,7 @@ export function useBatchesQuery(storeId: string, status?: BatchStatus) {
       return { items: res.data.data, total: res.data.meta?.total ?? res.data.data.length };
     },
     enabled: !!storeId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
