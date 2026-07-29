@@ -12,22 +12,23 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ProductGrid } from "../components/ProductGrid";
 import { categoryOf, money } from "../storefront.utils";
-import { useStorefrontProducts } from "./useStorefrontProducts";
+import {
+  useStorefrontCategories,
+  useStorefrontProducts,
+} from "./useStorefrontProducts";
 
 type SortOrder = "featured" | "price-low" | "price-high";
 
 export function CataloguePage() {
   const { data = [], isLoading } = useStorefrontProducts();
+  const { data: categoryData = [] } = useStorefrontCategories();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [maxPrice, setMaxPrice] = useState(150000);
   const [brand, setBrand] = useState("All");
   const [sort, setSort] = useState<SortOrder>("featured");
   const category = params.get("category") ?? "All";
-  const categories = [
-    "All",
-    ...Array.from(new Set(data.map(categoryOf).filter(Boolean))),
-  ];
+  const categories = ["All", ...categoryData.map((category) => category.name)];
   const brands = [
     "All",
     ...Array.from(

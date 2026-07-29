@@ -11,15 +11,31 @@ import { ProductGrid } from "../components/ProductGrid";
 import RippleGrid from "../components/RippleGrid";
 import { TypewriterHeading } from "../components/TypewriterHeading";
 import {
+  useStorefrontCategories,
   useStorefrontGallery,
   useStorefrontProducts,
 } from "./useStorefrontProducts";
 
 export function HomePage() {
   const { data = [], isLoading } = useStorefrontProducts();
+  const { data: categories = [] } = useStorefrontCategories();
   const { data: gallery = [] } = useStorefrontGallery("Subwoofer");
   const [activeImage, setActiveImage] = useState(0);
-  const categories = ["Amplifiers", "Speakers", "Subwoofers", "Accessories"];
+  const preferredCategories = [
+    "Amplifier",
+    "Speaker",
+    "Subwoofer",
+    "Accessories",
+  ];
+  const categoryTiles = preferredCategories
+    .map((name) =>
+      categories.find(
+        (category) => category.name.toLowerCase() === name.toLowerCase(),
+      ),
+    )
+    .filter((category): category is (typeof categories)[number] =>
+      Boolean(category),
+    );
 
   useEffect(() => {
     if (gallery.length < 2) return;
@@ -89,14 +105,14 @@ export function HomePage() {
           <h2>Shop by category</h2>
         </div>
         <div className="category-grid">
-          {categories.map((category, index) => (
+          {categoryTiles.map((category, index) => (
             <Link
               className={`category-tile tile-${index}`}
-              to={`/products?category=${category}`}
-              key={category}
+              to={`/products?category=${encodeURIComponent(category.name)}`}
+              key={category.id}
             >
               <span>0{index + 1}</span>
-              <strong>{category}</strong>
+              <strong>{category.name}</strong>
               <ChevronRight />
             </Link>
           ))}
