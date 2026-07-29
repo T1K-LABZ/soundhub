@@ -112,6 +112,28 @@ footer img {
   margin: 0;
   letter-spacing: 0;
 }
+.typewriter-heading {
+  min-height: 2.73em;
+}
+.typewriter-heading i {
+  animation: typewriter-cursor 700ms steps(1, end) infinite;
+  background: var(--recoil-yellow);
+  display: inline-block;
+  height: 0.82em;
+  margin-left: 0.06em;
+  vertical-align: 0.04em;
+  width: 0.08em;
+}
+@keyframes typewriter-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-heading i {
+    animation: none;
+  }
+}
 .hero-copy > p:not(.eyebrow) {
   font-size: 20px;
   max-width: 390px;

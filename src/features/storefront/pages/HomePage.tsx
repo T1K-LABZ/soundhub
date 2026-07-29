@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ProductGrid } from "../components/ProductGrid";
 import RippleGrid from "../components/RippleGrid";
+import { TypewriterHeading } from "../components/TypewriterHeading";
 import {
   useStorefrontGallery,
   useStorefrontProducts,
@@ -49,7 +50,7 @@ export function HomePage() {
         </div>
         <div className="hero-copy">
           <p className="eyebrow">Official Recoil Audio distributor in Kenya</p>
-          <h1>Power your drive.</h1>
+          <TypewriterHeading text="Power your drive." />
           <p>High-performance car audio, built for the road ahead.</p>
           <Button component={Link} to="/products" variant="contained">
             Shop Recoil <ChevronRight />
