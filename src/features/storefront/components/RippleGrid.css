@@ -1,0 +1,9 @@
+.ripple-grid-container {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.ripple-grid-container canvas {
+  display: block;
+}
