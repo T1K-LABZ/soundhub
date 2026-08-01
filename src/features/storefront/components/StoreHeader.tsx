@@ -25,7 +25,7 @@ export function StoreHeader({
   return (
     <>
       <div className="shipping-strip">
-        Free Nairobi delivery on orders above KSh 10,000
+        Free Nairobi delivery on orders above KSh 40,000
       </div>
       <header className="store-header">
         <Link to="/" className="brand">

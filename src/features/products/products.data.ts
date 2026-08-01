@@ -6,7 +6,6 @@ export const MOCK_CATEGORIES: Category[] = [
   { id: "cat-3", name: "Interfaces" },
   { id: "cat-4", name: "Drum Kits" },
   { id: "cat-5", name: "Software" },
-  { id: "cat-6", name: "Accessories" },
 ];
 
 export const MOCK_PRODUCTS: Product[] = [

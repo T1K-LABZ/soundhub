@@ -53,3 +53,33 @@ export type CheckoutResponse = {
   orderId: string;
   paymentStatus: "PENDING" | "PAID" | "FAILED";
 };
+
+// ── Public order placement ────────────────────────────────────────────────────
+
+export type PlaceOrderProduct = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+export type PlaceOrderPayload = {
+  storeId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  deliveryAddress: string;
+  products: PlaceOrderProduct[];
+  totalAmount: number;
+  notes?: string;
+};
+
+export type PlaceOrderResponse = {
+  id: string;
+  customerName: string;
+  status: string;
+  totalAmount: number;
+  products: PlaceOrderProduct[];
+  createdAt: string;
+};

@@ -145,6 +145,7 @@ export function InventoryPage() {
     (p) => p.stockQuantity > 0 && p.stockQuantity <= p.lowStockThreshold,
   ).length;
   const outOfStockCount = products.filter((p) => p.stockQuantity === 0).length;
+  const totalUnits = products.reduce((sum, p) => sum + p.stockQuantity, 0);
   const totalIncoming = inTransitBatches.total + pendingBatches.total;
 
   const displayedProducts = products.filter((p) => {
@@ -199,13 +200,14 @@ export function InventoryPage() {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, auto)" },
+            gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(5, auto)" },
             gap: 1,
             mb: 2,
           }}
         >
           {[
             { icon: <Inventory2Outlined />, label: "Products", value: products.length, color: "#1976d2", bg: "#e3f2fd" },
+            { icon: <Inventory2Outlined />, label: "Total Items", value: totalUnits, color: "#7b1fa2", bg: "#f3e5f5" },
             { icon: <CallReceivedOutlined />, label: "Low Stock", value: lowStockCount, color: "#ed6c02", bg: "#fff3e0" },
             { icon: <Inventory2Outlined />, label: "Out of Stock", value: outOfStockCount, color: "#d32f2f", bg: "#ffebee" },
             { icon: <LocalShippingOutlined />, label: "Incoming", value: totalIncoming, color: "#0288d1", bg: "#e1f5fe" },

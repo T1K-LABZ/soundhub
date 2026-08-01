@@ -56,6 +56,7 @@ export function ProductsPage() {
     try {
       const { data } = await getItems(storeId, {
         search: search || undefined,
+        category: category !== "all" ? category : undefined,
         page: pageNum,
         pageSize: PAGE_SIZE,
       });
@@ -72,7 +73,7 @@ export function ProductsPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [storeId, search]);
+  }, [storeId, search, category]);
 
   // Fetch page 1 whenever search changes, resetting previous results.
   useEffect(() => {

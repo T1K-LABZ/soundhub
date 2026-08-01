@@ -13,6 +13,7 @@ import { InvoicesPage } from "../features/invoices/InvoicesPage";
 import { ProductsPage } from "../features/products/ProductsPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
 import { SalesPage } from "../features/sales/SalesPage";
+import { OrdersPage } from "../features/orders/OrdersPage";
 import { StaffPage } from "../features/staff/StaffPage";
 import { ROUTES } from "./routes";
 import { getFirstPermittedRoute } from "./getFirstPermittedRoute";
@@ -47,6 +48,7 @@ export default function AdminApp() {
             <Route element={<PermissionGuard permissionKey="sales" />}>
               <Route path="sales" element={<SalesPage />} />
             </Route>
+            <Route path="orders" element={<OrdersPage />} />
             <Route element={<PermissionGuard permissionKey="invoices" />}>
               <Route path="invoices" element={<InvoicesPage />} />
             </Route>
